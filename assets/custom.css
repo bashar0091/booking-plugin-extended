@@ -1,0 +1,12 @@
+.pilar_off {
+    display: none;
+}
+.pilar-employee .am-service-data {
+    flex: 1;
+}
+.am-service {
+    display: none !important;
+}
+.pilar-employee {
+    display: block !important;
+}
