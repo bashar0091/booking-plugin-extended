@@ -5,8 +5,34 @@
     flex: 1;
 }
 .am-service {
-    display: none !important;
+    display: nonee !important;
 }
 .pilar-employee {
     display: block !important;
+}
+.popup_show {
+    cursor: pointer;
+}
+.booking_popup {
+    z-index: -9999;
+    opacity: 0;
+    visibility: hidden;
+    transition: 0.3s;
+}
+.booking_popup.show {
+    z-index: 2001;
+    opacity: 1;
+    visibility: visible;
+}
+.close_popup {
+    position: absolute;
+    right: 35px;
+    font-size: 18px;
+    padding: 15px;
+    z-index: 999;
+}
+.close_popup svg {
+    cursor: pointer;
+    width: 100%;
+    height: 20px;
 }

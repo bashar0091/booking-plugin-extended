@@ -2,108 +2,176 @@
 /**
  * Shortcode for employee_show
  */
+
 function employee_show() {
     
-    // Set the time zone to Dhaka
     $timezone = get_option('timezone_string');
     date_default_timezone_set($timezone);
 
-    $resulted = '';
+    $result = '';
 
     global $wpdb;
 
-    // Your table name for providers to weekdays
-    $providers_to_weekdays_table = $wpdb->prefix . 'amelia_providers_to_weekdays';
-
-    // Your table name for users
+    $weekdays_table_name = $wpdb->prefix . 'amelia_providers_to_weekdays'; 
+    $periods_table_name = $wpdb->prefix . 'amelia_providers_to_periods';
     $users_table = $wpdb->prefix . 'amelia_users';
+    $periods_services_table = $wpdb->prefix . 'amelia_providers_to_periods_services';
+    $amelia_services_table = $wpdb->prefix . 'amelia_services';
 
-    // Get the current day index (assuming you want to find employees for the current day)
-    $current_day_index = 7 - 1;
+    $current_time = date("H:i:s");
 
-    // Get the current PHP time
-    $current_time = date("H:i:s"); // Format: 03:00:00
+    $date = date("l");
+    $dayIndex = '';
+    if($date == 'Monday') {
+        $dayIndex = 1;
+    } elseif($date == 'Tuesday') {
+        $dayIndex = 2;
+    } elseif($date == 'Wednesday') {
+        $dayIndex = 3;
+    } elseif($date == 'Thursday') {
+        $dayIndex = 4;
+    } elseif($date == 'Friday') {
+        $dayIndex = 5;
+    } elseif($date == 'Saturday') {
+        $dayIndex = 6;
+    } elseif($date == 'Sunday') {
+        $dayIndex = 7;
+    }
 
-    // SQL query to retrieve startTime and userId where dayIndex matches the current day
+    // weekdays query 
     $query = $wpdb->prepare(
-        "SELECT startTime, userId FROM $providers_to_weekdays_table WHERE dayIndex = %d ORDER BY startTime ASC",
-        $current_day_index
+        "SELECT id, userId FROM $weekdays_table_name WHERE dayIndex = %d",
+        $dayIndex
     );
+    $weekday_ids = $wpdb->get_results($query);
 
-    // Execute the query
-    $results = $wpdb->get_results($query);
+    $employees = array();
 
-    // Check if there are results
-    if ($results) {
-        foreach ($results as $result) {
-            // Access the startTime and userId column data for each row
-            $startTime = $result->startTime;
+    if ($weekday_ids) {
+        foreach ($weekday_ids as $weekday_id) {
 
-            // Check if $startTime is less than the current PHP time
-            if ($startTime < $current_time) {
-                continue; // Skip to the next iteration
-            }
+            $id = $weekday_id->id;
+            $userId = $weekday_id->userId;
 
-            // Convert startTime to a DateTime object
-            $startTimeDateTime = new DateTime($startTime);
-
-            // Format the time to display only the hour and minute
-            $startTimeFormatted = $startTimeDateTime->format('H:i');
-
-            $userId = $result->userId;
-
-            // Query to retrieve the first name of the user with the given userId
+            // user query 
             $query = $wpdb->prepare(
                 "SELECT firstName, lastName, pictureFullPath FROM $users_table WHERE id = %d",
                 $userId
             );
-
             $userData = $wpdb->get_row($query);
 
-            // Execute the query to get the first name
             $firstName = $userData->firstName;
             $lastName = $userData->lastName;
+            
             $image = $userData->pictureFullPath;
 
             $firstCharacterFirstName = substr($firstName, 0, 1);
             $firstCharacterLastName = substr($lastName, 0, 1);
-
             $image_url = ( !empty($image) ? $image : "https://via.placeholder.com/120/000/fff?text=$firstCharacterFirstName$firstCharacterLastName" );
             
-            $resulted .= '
-            <div class="pilar_off">
-                <div class="am-service pilar-employee">
-                    <div class="am-service-header">
-                        <div class="am-service-image"><img src="'. $image_url .'" /></div>
-                        <div class="am-service-data">
-                            <div class="am-service-title"><h2>'. $firstName .' '. $lastName .'</div>
-                            <div class="am-service-info">
-                                <div class="am-service-provider">
-                                    Remote reception only
-                                </div>
-                                <div>
-                                    <img src="http://localhost/wp/amelia/wp-content/plugins/ameliabooking/public/img/user.svg" alt="capacity" />
-                                    
-                                </div>
-                                <div>
-                                    <img src="http://localhost/wp/amelia/wp-content/plugins/ameliabooking/public/img/duration.svg" alt="capacity" />
-                                    
-                                </div>
+            // periods query 
+            $query = $wpdb->prepare(
+                "SELECT startTime, endTime, id FROM $periods_table_name WHERE weekDayId = %d",
+                $id
+            );
+            $times = $wpdb->get_results($query);
+
+            if ($times) {
+                foreach ($times as $time) {
+                    
+                    $startTime = $time->startTime;
+                    $endTime = $time->endTime;
+                    $period_id = $time->id;
+
+                    if ($startTime < $current_time) {
+                        continue;
+                    }
+
+                    $startTimeDateTime = new DateTime($startTime);
+                    $endTimeDateTime = new DateTime($endTime);
+
+                    $startTimeFormatted = $startTimeDateTime->format('H:i');
+
+                    $interval = $startTimeDateTime->diff($endTimeDateTime);
+                    $minutesDifference = $interval->format('%i');
+
+                    $hoursDifference = $interval->format('%h');
+
+                    if ($hoursDifference > 0) {
+                        $differenceTime = sprintf('%02d hour:%02d min', $hoursDifference, $minutesDifference);
+                    } else {
+                        $differenceTime = sprintf('%d min', $minutesDifference);
+                    }
+
+                    // service query 
+                    $query = $wpdb->prepare(
+                        "SELECT serviceId FROM $periods_services_table WHERE periodId = %d",
+                        $period_id
+                    );
+                    $period_services = $wpdb->get_row($query);
+                    $service_id =  $period_services->serviceId;
+
+                    // services list query 
+                    $query = $wpdb->prepare(
+                        "SELECT name FROM $amelia_services_table WHERE id = %d",
+                        $service_id
+                    );
+                    $service_list = $wpdb->get_row($query);
+                    $service_name =  $service_list->name;
+
+                    $employees[] = array(
+                        'firstName' => $firstName,
+                        'lastName' => $lastName,
+                        'image_url' => $image_url,
+                        'startTimeFormatted' => $startTimeFormatted,
+                        'differenceTime' => $differenceTime,
+                        'service' => $service_name,
+                    );
+                }
+            } else {
+                echo "No results found for ID: $id<br>";
+            }
+        }
+    } else {
+        echo "No results found for dayIndex: $dayIndex";
+    }
+
+    // Sort employees by startTimeFormatted
+    usort($employees, function($a, $b) {
+        return strtotime($a['startTimeFormatted']) - strtotime($b['startTimeFormatted']);
+    });
+
+    foreach ($employees as $employee) {
+        $result .= '
+        <div class="pilar_off">
+            <div class="am-service pilar-employee">
+                <div class="am-service-header">
+                    <div class="am-service-image"><img src="'.$employee['image_url'].'" /></div>
+                    <div class="am-service-data">
+                        <div class="am-service-title"><h2>'.$employee['firstName'] .' '. $employee['lastName'] .'</h2></div>
+                        <div class="am-service-info">
+                            <div class="am-service-provider">
+                                '. $employee['service'] .'
+                            </div>
+                            <div>
+                                <img src="http://localhost/wp/amelia/wp-content/plugins/ameliabooking/public/img/user.svg" alt="capacity" />
+                            </div>
+                            <div>
+                                <img src="http://localhost/wp/amelia/wp-content/plugins/ameliabooking/public/img/duration.svg" alt="capacity" />
+                                '. $employee['differenceTime'] .'
                             </div>
                         </div>
-                        <div class="am-service-price">
-                            '. $startTimeFormatted .'
-                        </div>
+                    </div>
+                    <div class="am-service-price">
+                        '. $employee['startTimeFormatted'] .'
                     </div>
                 </div>
             </div>
-            ';
-        }
-    } else {
-        echo "No data found for the current day.";
+        </div>
+        ';
     }
 
-    return $resulted;
+    return $result;
 }
 
 add_shortcode( 'support-employee', 'employee_show' );
