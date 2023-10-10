@@ -12,5 +12,17 @@ jQuery(document).ready(function($) {
     $('.close_popup').click(function() {
         $('.booking_popup').removeClass('show');
     });
-    
+
+// service title exchange 
+
+    // setTimeout(() => {
+        
+    //     var service_name = $('.am-service-title h2').text();
+    //     var employee_name = $('.am-service-provider').text();
+        
+    //     $('.am-service-title h2').text(employee_name);
+    //     $('.am-service-provider').text(service_name);
+
+    // }, "1000");
+
 });
