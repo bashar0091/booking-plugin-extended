@@ -3,6 +3,8 @@
  * Shortcode for employee_show
  */
 
+require_once('booking-form.php');
+
 function employee_show() {
     
     $timezone = get_option('timezone_string');
@@ -55,13 +57,15 @@ function employee_show() {
 
             // user query 
             $query = $wpdb->prepare(
-                "SELECT firstName, lastName, pictureFullPath FROM $users_table WHERE id = %d",
+                "SELECT firstName, lastName, pictureFullPath, email, phone FROM $users_table WHERE id = %d",
                 $userId
             );
             $userData = $wpdb->get_row($query);
 
             $firstName = $userData->firstName;
             $lastName = $userData->lastName;
+            $user_email = $userData->email;
+            $user_phone = $userData->phone;
             
             $image = $userData->pictureFullPath;
 
@@ -122,6 +126,8 @@ function employee_show() {
                     $employees[] = array(
                         'firstName' => $firstName,
                         'lastName' => $lastName,
+                        'email' => $user_email,
+                        'phone' => $user_phone,
                         'image_url' => $image_url,
                         'startTimeFormatted' => $startTimeFormatted,
                         'differenceTime' => $differenceTime,
@@ -145,7 +151,7 @@ function employee_show() {
         $result .= '
         <div class="pilar_off">
             <div class="am-service pilar-employee">
-                <div class="am-service-header">
+                <div class="am-service-header popup_show">
                     <div class="am-service-image"><img src="'.$employee['image_url'].'" /></div>
                     <div class="am-service-data">
                         <div class="am-service-title"><h2>'.$employee['firstName'] .' '. $employee['lastName'] .'</h2></div>
@@ -166,6 +172,8 @@ function employee_show() {
                         '. $employee['startTimeFormatted'] .'
                     </div>
                 </div>
+
+                '.booking_form($employee['image_url'], $employee['firstName'], $employee['lastName'], $employee['service'], $employee['startTimeFormatted'], $employee['startTimeFormatted'], $employee['phone']).'
             </div>
         </div>
         ';

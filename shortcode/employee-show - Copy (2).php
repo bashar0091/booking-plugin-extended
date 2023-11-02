@@ -20,12 +20,8 @@ function employee_show() {
 
   global $wpdb;
 
-  $prefix = $wpdb->prefix;
-  
-  $table_name_providers_to_weekdays = $prefix . 'amelia_providers_to_weekdays';
-  $table_name_providers_to_periods = $prefix . 'amelia_providers_to_periods';
-  $table_name_providers_to_periods_services = $prefix . 'amelia_providers_to_periods_services';
-  $table_name_services = $prefix . 'amelia_services';
+  $table_name_providers_to_weekdays = $wpdb->prefix . 'amelia_providers_to_weekdays';
+  $table_name_providers_to_periods = $wpdb->prefix . 'amelia_providers_to_periods';
 
   $currentDate = date('l');
   $day_index = 0;
@@ -44,17 +40,12 @@ function employee_show() {
   }
 
   $query = $wpdb->prepare(
-    "SELECT papp.id AS period_id, pwpd.userId, u.id AS user_id, papp.weekDayId, papp.locationId, papp.startTime, papp.endTime, u.status, u.type, u.firstName, u.lastName, u.pictureFullPath, app_service.serviceId,
-    s.id AS service_id, s.name AS service_name, s.price AS service_price, s.settings As service_settings
+    "SELECT papp.id AS period_id, pwpd.userId, u.id AS user_id, papp.weekDayId, papp.locationId, papp.startTime, papp.endTime, u.status, u.type, u.firstName, u.lastName, u.pictureFullPath
     FROM $table_name_providers_to_periods AS papp
     INNER JOIN $table_name_providers_to_weekdays AS pwpd
     ON papp.weekDayId = pwpd.id
-    LEFT JOIN {$prefix}amelia_users AS u
+    LEFT JOIN wp_amelia_users AS u
     ON pwpd.userId = u.id
-    LEFT JOIN $table_name_providers_to_periods_services AS app_service
-    ON papp.id = app_service.periodId
-    LEFT JOIN $table_name_services AS s
-    ON app_service.serviceId = s.id
     WHERE pwpd.dayIndex = %d
     ORDER BY papp.startTime ASC", // Order by start time in ascending order
     $day_index
@@ -850,21 +841,8 @@ function employee_show() {
 
                             $user_firstName = $row->firstName;
                             $user_lastName = $row->lastName;
-
                             $pictureFullPath = $row->pictureFullPath;
-
-                            // Get the first character of the first and last names
-                            $first_letter = substr($user_firstName, 0, 1);
-                            $last_letter = substr($user_lastName, 0, 1);
-                            // Build the image URL with the first characters
-                            $dummy_image_url = "http://via.placeholder.com/120/E38587/fff?text=$first_letter.$last_letter";
-                            
-                            $service_name = $row->service_name;
-                            $service_price = $row->service_price;
                       
-                            $wc_product_data = json_decode($row->service_settings);
-                            $wc_product_id = $wc_product_data->payments->wc->productId;
-                            
                             $output .= '
                               <div class="pilar_card_box">
                                 <div class="pilar_card_time">
@@ -878,7 +856,7 @@ function employee_show() {
                             
                                 <div class="pilar_card_img_box">
                                     <div class="pilar_card_image">
-                                        <img src="'.( !empty($pictureFullPath) ? $pictureFullPath : $dummy_image_url ).'" alt="doctor_img">
+                                        <img src="'.$pictureFullPath.'" alt="doctor_img">
                                     </div>
                                     <div>
                                         <span>'.$user_firstName.' '.$user_lastName.'</span>
@@ -886,7 +864,7 @@ function employee_show() {
                                 </div>
                             
                                 <div>
-                                    <span>'.$service_name.'</span>
+                                    <span>Mehiläinen Helsinki Töölö</span>
                                 </div>
                             
                                 <div>
@@ -894,153 +872,146 @@ function employee_show() {
 
                                     <div class="pilar_modal v-modal" tabindex="0"></div>
                                     <div class="pilar_modal el-dialog__wrapper am-modal am-in-body" id="am-modal">
-                                      <div role="dialog" aria-modal="true" aria-label="dialog" class="el-dialog el-dialog--center" style="margin-top: 15vh;">
-                                          <div class="el-dialog__body">
+                                          <div role="dialog" aria-modal="true" aria-label="dialog" class="el-dialog el-dialog--center" style="margin-top: 15vh;">
+                                              <div class="el-dialog__body">
 
-                                              <button class="pilar_modal_close el-button el-button--danger">Close</button>
+                                                  <button class="pilar_modal_close el-button el-button--danger">Close</button>
 
-                                              <div id="am-confirm-booking" class="am-confirmation-booking">
-                                                  <div>
-                                                      <div class="am-confirmation-booking-header">
-                                                          <img src="'.$pictureFullPath.'" alt="doctor_img" />
-                                                          <h2 class="am-block-searchForm-confirmBookingForm-appointment" style="font-weight: 500;">
-                                                          '.$user_firstName.' '.$user_lastName.'
-                                                          </h2>
-                                                      </div>
-                                                      <!---->
-                                                      <form class="el-form am-confirm-booking-form el-form--label-top" action="" method="post">
-                                                          <div class="am-confirm-booking-data el-row" style="margin-left: -12px; margin-right: -12px;">
-                                                              <div class="el-col el-col-24 el-col-sm-24" style="padding-left: 12px; padding-right: 12px;">
-                                                                  <div class="am-confirmation-booking-details">
-                                                                      <div>
-                                                                          <p>
-                                                                              PALVELU:
-                                                                          </p>
-                                                                          <p class="am-semi-strong">
-                                                                              '.$service_name.'
-                                                                          </p>
-                                                                      </div>
-                                                                      <div>
-                                                                          <p>Date:</p>
-                                                                          <p class="am-semi-strong">
-                                                                              3.11.2023
-                                                                          </p>
-                                                                      </div>
-                                                                      <div>
-                                                                          <p>Local Time:</p>
-                                                                          <p class="am-semi-strong">
-                                                                              '.$formattedStartTime.'
-                                                                          </p>
-                                                                      </div>
-                                                                      <!---->
-                                                                  </div>
-                                                              </div>
-                                                              <!---->
-                                                              <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
-                                                                  <div class="el-form-item is-required am-input-">
-                                                                      <label for="customer.firstName" class="el-form-item__label">First Name:</label>
-                                                                      <div class="el-form-item__content">
-                                                                          <div class="el-input">
-                                                                              <!---->
-                                                                              <input type="text" name="given-name" class="el-input__inner" value="'.$user_first_name.'" />
-                                                                              <!----><!----><!----><!---->
+                                                  <div id="am-confirm-booking" class="am-confirmation-booking">
+                                                      <div>
+                                                          <div class="am-confirmation-booking-header">
+                                                              <img src="'.$pictureFullPath.'" alt="doctor_img" />
+                                                              <h2 class="am-block-searchForm-confirmBookingForm-appointment" style="font-weight: 500;">
+                                                                '.$user_firstName.' '.$user_lastName.'
+                                                              </h2>
+                                                          </div>
+                                                          <!---->
+                                                          <form class="el-form am-confirm-booking-form el-form--label-top">
+                                                              <div class="am-confirm-booking-data el-row" style="margin-left: -12px; margin-right: -12px;">
+                                                                  <div class="el-col el-col-24 el-col-sm-24" style="padding-left: 12px; padding-right: 12px;">
+                                                                      <div class="am-confirmation-booking-details">
+                                                                          <div>
+                                                                              <p>
+                                                                                  PALVELU:
+                                                                              </p>
+                                                                              <p class="am-semi-strong">
+                                                                                  Jukka Lehtonen
+                                                                              </p>
+                                                                          </div>
+                                                                          <div>
+                                                                              <p>Date:</p>
+                                                                              <p class="am-semi-strong">
+                                                                                  3.11.2023
+                                                                              </p>
+                                                                          </div>
+                                                                          <div>
+                                                                              <p>Local Time:</p>
+                                                                              <p class="am-semi-strong">
+                                                                                  '.$formattedStartTime.'
+                                                                              </p>
                                                                           </div>
                                                                           <!---->
                                                                       </div>
                                                                   </div>
-                                                              </div>
-                                                              <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
-                                                                  <div class="el-form-item is-required am-input-">
-                                                                      <label for="customer.lastName" class="el-form-item__label">Last Name:</label>
-                                                                      <div class="el-form-item__content">
-                                                                          <div class="el-input">
+                                                                  <!---->
+                                                                  <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
+                                                                      <div class="el-form-item is-required am-input-">
+                                                                          <label for="customer.firstName" class="el-form-item__label">First Name:</label>
+                                                                          <div class="el-form-item__content">
+                                                                              <div class="el-input">
+                                                                                  <!---->
+                                                                                  <input type="text" name="given-name" class="el-input__inner" value="'.$user_first_name.'" />
+                                                                                  <!----><!----><!----><!---->
+                                                                              </div>
                                                                               <!---->
-                                                                              <input type="text" name="family-name" class="el-input__inner" value="'.$user_last_name.'" />
-                                                                              <!----><!----><!----><!---->
                                                                           </div>
-                                                                          <!---->
                                                                       </div>
                                                                   </div>
-                                                              </div>
-                                                              <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
-                                                                  <div class="el-form-item is-required am-input-">
-                                                                      <label for="customer.email" class="el-form-item__label">Email:</label>
-                                                                      <div class="el-form-item__content">
-                                                                          <div class="el-input">
+                                                                  <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
+                                                                      <div class="el-form-item is-required am-input-">
+                                                                          <label for="customer.lastName" class="el-form-item__label">Last Name:</label>
+                                                                          <div class="el-form-item__content">
+                                                                              <div class="el-input">
+                                                                                  <!---->
+                                                                                  <input type="text" name="family-name" class="el-input__inner" value="'.$user_last_name.'" />
+                                                                                  <!----><!----><!----><!---->
+                                                                              </div>
                                                                               <!---->
-                                                                              <input type="email" placeholder="example@mail.com" name="email" class="el-input__inner" value="'.$user_email.'" />
-                                                                              <!----><!----><!----><!---->
                                                                           </div>
-                                                                          <!---->
                                                                       </div>
                                                                   </div>
-                                                              </div>
-                                                              <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
-                                                                  <div class="el-form-item is-required am-input-" style="height: inherit;">
-                                                                      <label for="customer.phone" class="el-form-item__label">Phone:</label>
-                                                                      <div class="el-form-item__content">
-                                                                          <div class="el-input el-input-group el-input-group--prepend el-input--suffix">
-                                                                              <div class="el-input-group__prepend">
-                                                                                  <div class="el-select am-selected-flag am-selected-flag-fi">
-                                                                                      <div class="el-input el-input--suffix">
-                                                                                          <input type="text" readonly="readonly" autocomplete="off" placeholder="" class="el-input__inner" />
+                                                                  <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
+                                                                      <div class="el-form-item is-required am-input-">
+                                                                          <label for="customer.email" class="el-form-item__label">Email:</label>
+                                                                          <div class="el-form-item__content">
+                                                                              <div class="el-input">
+                                                                                  <!---->
+                                                                                  <input type="email" placeholder="example@mail.com" name="email" class="el-input__inner" value="'.$user_email.'" />
+                                                                                  <!----><!----><!----><!---->
+                                                                              </div>
+                                                                              <!---->
+                                                                          </div>
+                                                                      </div>
+                                                                  </div>
+                                                                  <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
+                                                                      <div class="el-form-item is-required am-input-" style="height: inherit;">
+                                                                          <label for="customer.phone" class="el-form-item__label">Phone:</label>
+                                                                          <div class="el-form-item__content">
+                                                                              <div class="el-input el-input-group el-input-group--prepend el-input--suffix">
+                                                                                  <div class="el-input-group__prepend">
+                                                                                      <div class="el-select am-selected-flag am-selected-flag-fi">
+                                                                                          <div class="el-input el-input--suffix">
+                                                                                              <input type="text" readonly="readonly" autocomplete="off" placeholder="" class="el-input__inner" />
+                                                                                          </div>
                                                                                       </div>
                                                                                   </div>
+                                                                                  <input type="tel" autocomplete="tel" placeholder="041 2345678" name="tel" class="el-input__inner" />
                                                                               </div>
-                                                                              <input type="tel" placeholder="041 2345678" name="tel" class="el-input__inner" required />
                                                                           </div>
                                                                       </div>
                                                                   </div>
                                                               </div>
-                                                          </div>
-
-                                                          <div class="el-row">
-                                                              <div class="el-col el-col-24 el-col-sm-24">
-                                                                  <div class="am-confirmation-booking-cost" style="padding-top: 16px;">
-                                                                      <div class="el-row" style="margin-left: -12px; margin-right: -12px;">
-                                                                          <div class="el-col el-col-6" style="padding-left: 12px; padding-right: 12px;">
-                                                                              <p style="visibility: visible;">
-                                                                                  Base Price:
-                                                                              </p>
-                                                                          </div>
-                                                                          <div class="el-col el-col-18" style="padding-left: 12px; padding-right: 12px;">
-                                                                              <p class="am-semi-strong text_right">
-                                                                                  '.$service_price.' €
-                                                                              </p>
-                                                                          </div>
-                                                                      </div>
-                                                                      <div class="am-confirmation-total">
+                          
+                                                              <div class="el-row">
+                                                                  <div class="el-col el-col-24 el-col-sm-24">
+                                                                      <div class="am-confirmation-booking-cost" style="padding-top: 16px;">
                                                                           <div class="el-row" style="margin-left: -12px; margin-right: -12px;">
-                                                                              <div class="el-col el-col-12" style="padding-left: 12px; padding-right: 12px;">
-                                                                                  <p>
-                                                                                      Total Cost:
+                                                                              <div class="el-col el-col-6" style="padding-left: 12px; padding-right: 12px;">
+                                                                                  <p style="visibility: visible;">
+                                                                                      Base Price:
                                                                                   </p>
                                                                               </div>
-                                                                              <div class="el-col el-col-12" style="padding-left: 12px; padding-right: 12px;">
-                                                                                  <p class="am-semi-strong text_right">
-                                                                                      '.$service_price.' €
+                                                                              <div class="el-col el-col-18" style="padding-left: 12px; padding-right: 12px;">
+                                                                                  <p class="am-semi-strong am-align-right">
+                                                                                      50.00 €
                                                                                   </p>
+                                                                              </div>
+                                                                          </div>
+                                                                          <div class="am-confirmation-total">
+                                                                              <div class="el-row" style="margin-left: -12px; margin-right: -12px;">
+                                                                                  <div class="el-col el-col-12" style="padding-left: 12px; padding-right: 12px;">
+                                                                                      <p>
+                                                                                          Total Cost:
+                                                                                      </p>
+                                                                                  </div>
+                                                                                  <div class="el-col el-col-12" style="padding-left: 12px; padding-right: 12px;">
+                                                                                      <p class="am-semi-strong am-align-right">
+                                                                                          50.00 €
+                                                                                      </p>
+                                                                                  </div>
                                                                               </div>
                                                                           </div>
                                                                       </div>
                                                                   </div>
                                                               </div>
-                                                          </div>
-                                                          
-                                                          <input type="hidden" name="time_date" value="3.11.2023 '.$formattedStartTime.'"/>
-                                                          <input type="hidden" name="service_name" value="'.$service_name.'"/>
-                                                          <input type="hidden" name="doctor_name" value="'.$user_firstName.' '.$user_lastName.'"/>
-                                                          <input type="hidden" name="wc_product_id" value="'.$wc_product_id.'"/>
-
+                                                          </form>
                                                           <div slot="footer" class="dialog-footer payment-dialog-footer">
-                                                              <button type="submit" name="pilar_booking_cart" class="el-button el-button--primary" style=""><span>Confirm</span></button>
+                                                              <div class="el-button el-button--primary" style=""><span>Confirm</span></div>
                                                           </div>
-                                                      
-                                                      </form>
+                                                      </div>
                                                   </div>
                                               </div>
                                           </div>
-                                      </div>
                                     </div>
 
                                 </div>
@@ -1049,7 +1020,7 @@ function employee_show() {
                             ';
 
                             // Do something with the data from the joined result set
-                            echo "User ID: $userId, Period ID: $period_id, WeekDay ID: $weekDayId, Location ID: $locationId, Start Time: $startTime, End Time: $endTime, Service Name: $service_name <br><br>";
+                            echo "User ID: $userId, Period ID: $period_id, WeekDay ID: $weekDayId, Location ID: $locationId, Start Time: $startTime, End Time: $endTime<br>";
                           
                           }
                         } else {
