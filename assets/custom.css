@@ -97,3 +97,32 @@ span.pilar_title3 {
 .variation dt {
     font-weight: bold;
 }
+.d-flex {
+    display: flex;
+}
+.flex-nowrap {
+    flex-wrap: nowrap;
+}
+.align-items-center {
+    align-items: center;
+}
+.justify-content-between {
+    justify-content: space-between;
+}
+.text-dark {
+    color: #1a1b1c !important;
+}
+.justify-content-center {
+    justify-content: center;
+}
+.js-today {
+    background-color: var(--main_color);
+    border-radius: 100px;
+}
+.disabled_month > div {
+    color: #cecece !important;
+}
+#pilar_calendar .active {
+    border-radius: 100px;
+    border: 1px solid var(--main_color);
+}

@@ -8,5 +8,12 @@ jQuery(document).ready(function($){
     $('.pilar_modal_close').click(function() {
         $('.pilar_modal').removeClass('show');
     });
-    
+
+    // calendar show 
+    $('#pilar_calendar').bsCalendar();
+
+    $('.date_remove_pilar').click(function(){
+        sessionStorage.removeItem('date_set_click');
+    });
+
 });

@@ -1,50 +1,79 @@
 <?php
 /**
- * Shortcode for employee_show
- */
+* Shortcode for employee_show
+*/
 
-require_once('booking-form.php');
+require_once( 'booking-form.php' );
 
 function employee_show() {
 
-  $output = '';
+    session_start();
 
-  // for css and html layout get 
-  $output .= do_shortcode('[ameliasearch today=1]');
+    global $wpdb;
 
-  $current_user = wp_get_current_user();
+    // clear session date
+    if ( isset( $_POST[ 'date_clear' ] ) ) {
+        session_destroy();
+        header( 'Location: ' . $_SERVER[ 'REQUEST_URI' ] );
+        exit;
+    }
 
-  $user_first_name = $current_user->first_name;
-  $user_last_name = $current_user->last_name;
-  $user_email = !empty($current_user->user_email) ? $current_user->user_email : 'guest@gmail.com';
+    $output = '';
 
-  global $wpdb;
+    // for css and html layout get
+    $output .= do_shortcode( '[ameliasearch today=1]' );
 
-  $prefix = $wpdb->prefix;
-  
-  $table_name_providers_to_weekdays = $prefix . 'amelia_providers_to_weekdays';
-  $table_name_providers_to_periods = $prefix . 'amelia_providers_to_periods';
-  $table_name_providers_to_periods_services = $prefix . 'amelia_providers_to_periods_services';
-  $table_name_services = $prefix . 'amelia_services';
+    $current_user = wp_get_current_user();
 
-  $currentDate = date('l');
-  $day_index = 0;
-  if ($currentDate == 'Monday') {
-    $day_index = 1;
-  } elseif ($currentDate == 'Tuesday') {
-    $day_index = 2;
-  } elseif ($currentDate == 'Wednesday') {
-    $day_index = 3;
-  } elseif ($currentDate == 'Thursday') {
-    $day_index = 4;
-  } elseif ($currentDate == 'Friday') {
-    $day_index = 5;
-  } else {
-    $day_index = 0;
-  }
+    //user information get
+    $table_name2 = $wpdb->prefix . 'amelia_users';
+    $user_email2 = $current_user->user_email;
+    $query2 = $wpdb->prepare( "SELECT * FROM $table_name2 WHERE email = %s", $user_email2 );
+    $results2 = $wpdb->get_results( $query2 );
 
-  $query = $wpdb->prepare(
-    "SELECT papp.id AS period_id, pwpd.userId, u.id AS user_id, papp.weekDayId, papp.locationId, papp.startTime, papp.endTime, u.status, u.type, u.firstName, u.lastName, u.pictureFullPath, app_service.serviceId,
+    $user_first_name = $current_user->first_name;
+    $user_last_name = $current_user->last_name;
+    $user_email = !empty( $current_user->user_email ) ? $current_user->user_email : 'guest@gmail.com';
+
+    //  ===  ===  ===
+
+    $prefix = $wpdb->prefix;
+
+    $table_name_providers_to_weekdays = $prefix . 'amelia_providers_to_weekdays';
+    $table_name_providers_to_periods = $prefix . 'amelia_providers_to_periods';
+    $table_name_providers_to_periods_services = $prefix . 'amelia_providers_to_periods_services';
+    $table_name_services = $prefix . 'amelia_services';
+
+    if ( isset( $_SESSION[ 'day_index' ] ) && !empty( $_SESSION[ 'day_index' ] ) ) {
+
+        $day_index = $_SESSION[ 'day_index' ];
+
+    } else {
+
+        $currentDate = date( 'l' );
+
+        if ( $currentDate == 'Monday' ) {
+            $day_index = 1;
+        } elseif ( $currentDate == 'Tuesday' ) {
+            $day_index = 2;
+        } elseif ( $currentDate == 'Wednesday' ) {
+            $day_index = 3;
+        } elseif ( $currentDate == 'Thursday' ) {
+            $day_index = 4;
+        } elseif ( $currentDate == 'Friday' ) {
+            $day_index = 5;
+        } elseif ( $currentDate == 'Saturday' ) {
+            $day_index = 6;
+        } elseif ( $currentDate == 'Sunday' ) {
+            $day_index = 7;
+        } else {
+            $day_index = 0;
+        }
+
+    }
+
+    $query = $wpdb->prepare(
+        "SELECT papp.id AS period_id, pwpd.userId, u.id AS user_id, papp.weekDayId, papp.locationId, papp.startTime, papp.endTime, u.status, u.type, u.firstName, u.lastName, u.pictureFullPath, app_service.serviceId,
     s.id AS service_id, s.name AS service_name, s.price AS service_price, s.settings As service_settings
     FROM $table_name_providers_to_periods AS papp
     INNER JOIN $table_name_providers_to_weekdays AS pwpd
@@ -57,749 +86,25 @@ function employee_show() {
     ON app_service.serviceId = s.id
     WHERE pwpd.dayIndex = %d
     ORDER BY papp.startTime ASC", // Order by start time in ascending order
-    $day_index
-  );
+        $day_index
+    );
 
-  $results = $wpdb->get_results($query);
-    
-  $output .='
+    $results = $wpdb->get_results( $query );
+
+    $output .= '
   <div class="pilar_booking_list amelia-search amelia-frontend amelia-app-booking">
       <div id="amelia-booking-wrap" class="am-wrap">
           <div id="am-search-booking">
               <div class="am-search-filters am-scroll">
                   <div class="am-close-icon"><i class="el-icon-close"></i></div>
-                  <h2>Search Filters</h2>
+                  <h2>'.__( 'Search Filters', 'my-theme' ).'</h2>
                   <div id="am-search-filters" class="am-search-filter">
                       <button type="button" class="el-button am-search-mobile-button el-button--primary">
                           <!----><!---->
                           <span>Search</span>
                       </button>
-                      <h3>Appointment Date:</h3>
-                      <div
-                          data-v-bc55024c=""
-                          class="am-calendar-picker c-pane-container is-expanded"
-                          id="am-calendar-picker"
-                          dragattribute="[object Object]"
-                          is-expanded="true"
-                          formats="[object Object]"
-                          mindate="Thu Nov 02 2023 16:10:34 GMT+0600 (Bangladesh Standard Time)"
-                          maxdate="Thu Oct 31 2024 00:00:00 GMT+0600 (Bangladesh Standard Time)"
-                          themestyles="[object Object]"
-                          style="background-color: rgb(250, 250, 250); border: 1px solid rgb(218, 218, 218);"
-                          frompage="[object Object]"
-                      >
-                          <div data-v-2083cb72="" data-v-bc55024c="" class="c-pane" id="am-calendar-picker" dragattribute="[object Object]" attributes="[object Object]" style="min-width: 256px;">
-                              <div data-v-2083cb72="" class="c-header">
-                                  <div data-v-2083cb72="" class="c-arrow-layout">
-                                      <svg data-v-12e91ab4="" data-v-2083cb72="" width="26px" height="26px" viewBox="3 2 12 32" class="svg-icon c-arrow c-disabled">
-                                          <path
-                                              data-v-12e91ab4=""
-                                              d="M11.196 10c0 0.143-0.071 0.304-0.179 0.411l-7.018 7.018 7.018 7.018c0.107 0.107 0.179 0.268 0.179 0.411s-0.071 0.304-0.179 0.411l-0.893 0.893c-0.107 0.107-0.268 0.179-0.411 0.179s-0.304-0.071-0.411-0.179l-8.321-8.321c-0.107-0.107-0.179-0.268-0.179-0.411s0.071-0.304 0.179-0.411l8.321-8.321c0.107-0.107 0.268-0.179 0.411-0.179s0.304 0.071 0.411 0.179l0.893 0.893c0.107 0.107 0.179 0.25 0.179 0.411z"
-                                          ></path>
-                                      </svg>
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-title-layout align-center">
-                                      <div data-v-1ad2436f="" data-v-2083cb72="" tabindex="-1" class="c-title-popover popover-container">
-                                          <!---->
-                                          <div data-v-2083cb72="" class="c-title-anchor" data-v-1ad2436f="">
-                                              <div data-v-2083cb72="" class="c-title">
-                                                  November 2023
-                                              </div>
-                                          </div>
-                                      </div>
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-arrow-layout">
-                                      <svg data-v-12e91ab4="" data-v-2083cb72="" width="26px" height="26px" viewBox="-2 1 11 32" class="svg-icon c-arrow">
-                                          <path
-                                              data-v-12e91ab4=""
-                                              d="M10.625 17.429c0 0.143-0.071 0.304-0.179 0.411l-8.321 8.321c-0.107 0.107-0.268 0.179-0.411 0.179s-0.304-0.071-0.411-0.179l-0.893-0.893c-0.107-0.107-0.179-0.25-0.179-0.411 0-0.143 0.071-0.304 0.179-0.411l7.018-7.018-7.018-7.018c-0.107-0.107-0.179-0.268-0.179-0.411s0.071-0.304 0.179-0.411l0.893-0.893c0.107-0.107 0.268-0.179 0.411-0.179s0.304 0.071 0.411 0.179l8.321 8.321c0.107 0.107 0.179 0.268 0.179 0.411z"
-                                          ></path>
-                                      </svg>
-                                  </div>
-                              </div>
-                              <!---->
-                              <div data-v-2083cb72="" class="c-weekdays">
-                                  <div data-v-2083cb72="" class="c-weekday">
-                                      M
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-weekday">
-                                      T
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-weekday">
-                                      W
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-weekday">
-                                      T
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-weekday">
-                                      F
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-weekday">
-                                      S
-                                  </div>
-                                  <div data-v-2083cb72="" class="c-weekday">
-                                      S
-                                  </div>
-                              </div>
-                              <!---->
-                              <div data-v-2083cb72="" class="c-weeks">
-                                  <div data-v-2083cb72="" class="c-weeks-rows-wrapper">
-                                      <div data-v-28896542="" data-v-2083cb72="" styles="[object Object]" formats="[object Object]" id="am-calendar-picker" dragattribute="[object Object]" attributes="[object Object]" class="c-weeks-rows">
-                                          <div data-v-28896542="" class="c-week">
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="color: rgb(204, 204, 204); opacity: 0.5; text-decoration: line-through;">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  30
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="color: rgb(204, 204, 204); opacity: 0.5; text-decoration: line-through;">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  31
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="color: rgb(204, 204, 204); opacity: 0.5; text-decoration: line-through;">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  1
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f="">
-                                                          <div data-v-3db80f80="" class="c-day-layer c-day-box-center-center c-day-scale-enter c-day-scale-leave">
-                                                              <div
-                                                                  data-v-3db80f80=""
-                                                                  class="c-day-background"
-                                                                  style="width: 1.8rem; height: 1.8rem; background-color: rgb(26, 132, 238); border-width: 0px; border-style: solid; border-radius: 50%; opacity: 1;"
-                                                              ></div>
-                                                          </div>
-                                                      </div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="color: rgb(250, 250, 250);">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  2
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  3
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  4
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  5
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                          </div>
-                                          <div data-v-28896542="" class="c-week">
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  6
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  7
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  8
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  9
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  10
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  11
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  12
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                          </div>
-                                          <div data-v-28896542="" class="c-week">
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  13
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  14
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  15
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  16
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  17
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  18
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  19
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                          </div>
-                                          <div data-v-28896542="" class="c-week">
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  20
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  21
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  22
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  23
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  24
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  25
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  26
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                          </div>
-                                          <div data-v-28896542="" class="c-week">
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  27
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  28
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  29
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  30
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  1
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  2
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  3
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                          </div>
-                                          <div data-v-28896542="" class="c-week">
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  4
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  5
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  6
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  7
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  8
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  9
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                              <div data-v-1ad2436f="" data-v-3db80f80="" data-v-28896542="" class="c-day-popover popover-container" id="am-calendar-picker" dragattribute="[object Object]">
-                                                  <!---->
-                                                  <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day" style="opacity: 0.4;">
-                                                      <div data-v-3db80f80="" class="c-day-backgrounds c-day-layer" data-v-1ad2436f=""></div>
-                                                      <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content-wrapper">
-                                                          <div data-v-3db80f80="" data-v-1ad2436f="" class="c-day-content" style="">
-                                                              <div data-v-3db80f80="" data-v-1ad2436f="">
-                                                                  10
-                                                              </div>
-                                                          </div>
-                                                      </div>
-                                                      <!---->
-                                                      <!---->
-                                                  </div>
-                                              </div>
-                                          </div>
-                                      </div>
-                                  </div>
-                              </div>
-                          </div>
-                      </div>
+                      <h3>'.__( 'Appointment Date', 'my-theme' ).':</h3>
+                      <div id="pilar_calendar"></div>
                   </div>
               </div>
               <div class="am-search-results">
@@ -832,43 +137,78 @@ function employee_show() {
                           <!----><!----><!---->
                       </div>
                   </div>
-                  <div class="am-service-list">
+                  
+                  <div class="am-service-list">';
+
+    if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+        $today = date( 'l, M j, Y' );
+        if ( $today == $_SESSION[ 'dateGet' ] ) {
+
+        } else {
+            $output .= '
+                            <div class="d-flex align-items-center">
+                                <span>'.__("Showing Result of", "amelia_support_pilar").' <u>'.$_SESSION[ 'dateGet' ].'</u></span>
+                                <span>
+                                    <form action="" method="post" style="margin-bottom: 0">
+                                        <button name="date_clear" class="date_remove_pilar el-button el-button--danger">'.__("Clear", "amelia_support_pilar").'</button>
+                                    </form>
+                                </span>
+                            </div>
+                            ';
+        }
+    }
+
+    $output .= '
                       <div id="service-list" class="am-service-list-container">';
 
-                        if ($results) {
-                          foreach ($results as $row) {
-                            // Access data for each row in the joined result set
-                            $userId = $row->userId;
-                            $period_id = $row->period_id;
-                            $weekDayId = $row->weekDayId;
-                            $locationId = $row->locationId;
+    if ( $results ) {
+        foreach ( $results as $row ) {
+            // Access data for each row in the joined result set
+            $userId = $row->userId;
+            $period_id = $row->period_id;
+            $weekDayId = $row->weekDayId;
+            $locationId = $row->locationId;
 
-                            $startTime = $row->startTime; 
-                            $formattedStartTime = date('H:i', strtotime($startTime));
+            $startTime = $row->startTime;
 
-                            $endTime = $row->endTime;
+            $formattedStartTime = date( 'H:i', strtotime( $startTime ) );
 
-                            $user_firstName = $row->firstName;
-                            $user_lastName = $row->lastName;
+            $endTime = $row->endTime;
 
-                            $pictureFullPath = $row->pictureFullPath;
+            $user_firstName = $row->firstName;
+            $user_lastName = $row->lastName;
 
-                            // Get the first character of the first and last names
-                            $first_letter = substr($user_firstName, 0, 1);
-                            $last_letter = substr($user_lastName, 0, 1);
-                            // Build the image URL with the first characters
-                            $dummy_image_url = "http://via.placeholder.com/120/E38587/fff?text=$first_letter.$last_letter";
-                            
-                            $service_name = $row->service_name;
-                            $service_price = $row->service_price;
-                      
-                            $wc_product_data = json_decode($row->service_settings);
-                            $wc_product_id = $wc_product_data->payments->wc->productId;
-                            
-                            $output .= '
+            $pictureFullPath = $row->pictureFullPath;
+
+            // Get the first character of the first and last names
+            $first_letter = substr( $user_firstName, 0, 1 );
+            $last_letter = substr( $user_lastName, 0, 1 );
+            // Build the image URL with the first characters
+            $dummy_image_url = "http://via.placeholder.com/120/E38587/fff?text=$first_letter.$last_letter";
+
+            $service_id = $row->service_id;
+            $service_name = $row->service_name;
+            $service_price = $row->service_price;
+
+            $wc_product_data = json_decode( $row->service_settings );
+            $wc_product_id = $wc_product_data->payments->wc->productId;
+
+            $output .= '
                               <div class="pilar_card_box">
-                                <div class="pilar_card_time">
-                                    <span class="pilar_title1">Today</span>
+                                <div class="pilar_card_time">';
+
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+                $today = date( 'l, M j, Y' );
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
+                    $output .= '<span class="pilar_title1">'.__( 'Today', 'amelia_support_pilar' ).'</span>';
+                } else {
+                    $output .= '<span class="pilar_title1">' . $_SESSION[ 'dateGet' ].'</span>';
+                }
+            } else {
+                $output .= '<span class="pilar_title1">'.__( 'Today', 'amelia_support_pilar' ).'</span>';
+            }
+
+            $output .= '
                                     <span class="pilar_title2">'.$formattedStartTime.'</span>
                                     <span class="pilar_title3">
                                         <img src="'.home_url().'/wp-content/plugins/ameliabooking/public/img/duration.svg" alt="capacity">
@@ -878,7 +218,7 @@ function employee_show() {
                             
                                 <div class="pilar_card_img_box">
                                     <div class="pilar_card_image">
-                                        <img src="'.( !empty($pictureFullPath) ? $pictureFullPath : $dummy_image_url ).'" alt="doctor_img">
+                                        <img src="'.( !empty( $pictureFullPath ) ? $pictureFullPath : $dummy_image_url ).'" alt="doctor_img">
                                     </div>
                                     <div>
                                         <span>'.$user_firstName.' '.$user_lastName.'</span>
@@ -890,19 +230,19 @@ function employee_show() {
                                 </div>
                             
                                 <div>
-                                    <button class="pilar_card_btn">Book</button>
+                                    <button class="pilar_card_btn">'.__( 'Book', 'amelia_support_pilar' ).'</button>
 
                                     <div class="pilar_modal v-modal" tabindex="0"></div>
                                     <div class="pilar_modal el-dialog__wrapper am-modal am-in-body" id="am-modal">
                                       <div role="dialog" aria-modal="true" aria-label="dialog" class="el-dialog el-dialog--center" style="margin-top: 15vh;">
                                           <div class="el-dialog__body">
 
-                                              <button class="pilar_modal_close el-button el-button--danger">Close</button>
+                                              <button class="pilar_modal_close el-button el-button--danger">'.__( 'Close', 'amelia_support_pilar' ).'</button>
 
                                               <div id="am-confirm-booking" class="am-confirmation-booking">
                                                   <div>
                                                       <div class="am-confirmation-booking-header">
-                                                          <img src="'.$pictureFullPath.'" alt="doctor_img" />
+                                                          <img src="'.( !empty( $pictureFullPath ) ? $pictureFullPath : $dummy_image_url ).'" alt="doctor_img" />
                                                           <h2 class="am-block-searchForm-confirmBookingForm-appointment" style="font-weight: 500;">
                                                           '.$user_firstName.' '.$user_lastName.'
                                                           </h2>
@@ -914,20 +254,30 @@ function employee_show() {
                                                                   <div class="am-confirmation-booking-details">
                                                                       <div>
                                                                           <p>
-                                                                              PALVELU:
+                                                                              '.__("PALVELU", "amelia_support_pilar").':
                                                                           </p>
                                                                           <p class="am-semi-strong">
                                                                               '.$service_name.'
                                                                           </p>
                                                                       </div>
                                                                       <div>
-                                                                          <p>Date:</p>
-                                                                          <p class="am-semi-strong">
-                                                                              3.11.2023
+                                                                          <p>'.__("Date", "amelia_support_pilar").':</p>
+                                                                          <p class="am-semi-strong">';
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+                $today = date( 'l, M j, Y' );
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
+                    $output .= date( 'd.m.Y' );
+                } else {
+                    $output .= date( 'd.m.Y', strtotime( $_SESSION[ 'dateGet' ] ) );
+                }
+            } else {
+                $output .= date( 'd.m.Y' );
+            }
+            $output .= '
                                                                           </p>
                                                                       </div>
                                                                       <div>
-                                                                          <p>Local Time:</p>
+                                                                          <p>'.__("Local Time", "amelia_support_pilar").':</p>
                                                                           <p class="am-semi-strong">
                                                                               '.$formattedStartTime.'
                                                                           </p>
@@ -938,7 +288,7 @@ function employee_show() {
                                                               <!---->
                                                               <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
                                                                   <div class="el-form-item is-required am-input-">
-                                                                      <label for="customer.firstName" class="el-form-item__label">First Name:</label>
+                                                                      <label for="customer.firstName" class="el-form-item__label">'.__("First Name", "amelia_support_pilar").':</label>
                                                                       <div class="el-form-item__content">
                                                                           <div class="el-input">
                                                                               <!---->
@@ -951,7 +301,7 @@ function employee_show() {
                                                               </div>
                                                               <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
                                                                   <div class="el-form-item is-required am-input-">
-                                                                      <label for="customer.lastName" class="el-form-item__label">Last Name:</label>
+                                                                      <label for="customer.lastName" class="el-form-item__label">'.__("Last Name", "amelia_support_pilar").':</label>
                                                                       <div class="el-form-item__content">
                                                                           <div class="el-input">
                                                                               <!---->
@@ -964,7 +314,7 @@ function employee_show() {
                                                               </div>
                                                               <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
                                                                   <div class="el-form-item is-required am-input-">
-                                                                      <label for="customer.email" class="el-form-item__label">Email:</label>
+                                                                      <label for="customer.email" class="el-form-item__label">'.__("Email", "amelia_support_pilar").':</label>
                                                                       <div class="el-form-item__content">
                                                                           <div class="el-input">
                                                                               <!---->
@@ -977,7 +327,7 @@ function employee_show() {
                                                               </div>
                                                               <div class="el-col el-col-24 el-col-sm-12" style="padding-left: 12px; padding-right: 12px;">
                                                                   <div class="el-form-item is-required am-input-" style="height: inherit;">
-                                                                      <label for="customer.phone" class="el-form-item__label">Phone:</label>
+                                                                      <label for="customer.phone" class="el-form-item__label">'.__("Phone", "amelia_support_pilar").':</label>
                                                                       <div class="el-form-item__content">
                                                                           <div class="el-input el-input-group el-input-group--prepend el-input--suffix">
                                                                               <div class="el-input-group__prepend">
@@ -1000,7 +350,7 @@ function employee_show() {
                                                                       <div class="el-row" style="margin-left: -12px; margin-right: -12px;">
                                                                           <div class="el-col el-col-6" style="padding-left: 12px; padding-right: 12px;">
                                                                               <p style="visibility: visible;">
-                                                                                  Base Price:
+                                                                                  '.__("Base Price", "amelia_support_pilar").':
                                                                               </p>
                                                                           </div>
                                                                           <div class="el-col el-col-18" style="padding-left: 12px; padding-right: 12px;">
@@ -1013,7 +363,7 @@ function employee_show() {
                                                                           <div class="el-row" style="margin-left: -12px; margin-right: -12px;">
                                                                               <div class="el-col el-col-12" style="padding-left: 12px; padding-right: 12px;">
                                                                                   <p>
-                                                                                      Total Cost:
+                                                                                      '.__("Total Cost", "amelia_support_pilar").':
                                                                                   </p>
                                                                               </div>
                                                                               <div class="el-col el-col-12" style="padding-left: 12px; padding-right: 12px;">
@@ -1026,14 +376,55 @@ function employee_show() {
                                                                   </div>
                                                               </div>
                                                           </div>
+                                                          ';
+
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+                $today = date( 'l, M j, Y' );
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
+                    $output .= '<input type="hidden" name="time_date" value="'.date( 'd.m.Y' ) .' '. $formattedStartTime.'"/>';
+                } else {
+                    $output .= '<input type="hidden" name="time_date" value="'.date( 'd.m.Y', strtotime( $_SESSION[ 'dateGet' ] ) ) .' '. $formattedStartTime.'"/>';
+                }
+            } else {
+                $output .= '<input type="hidden" name="time_date" value="'.date( 'd.m.Y' ) .' '. $formattedStartTime.'"/>';
+            }
+
+            $output .= '
                                                           
-                                                          <input type="hidden" name="time_date" value="3.11.2023 '.$formattedStartTime.'"/>
                                                           <input type="hidden" name="service_name" value="'.$service_name.'"/>
                                                           <input type="hidden" name="doctor_name" value="'.$user_firstName.' '.$user_lastName.'"/>
-                                                          <input type="hidden" name="wc_product_id" value="'.$wc_product_id.'"/>
+                                                          <input type="hidden" name="wc_product_id" value="'.$wc_product_id.'"/>';
+
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+                $today = date( 'l, M j, Y' );
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
+                    $output .= '<input type="hidden" name="pilar_booking_start" value="'.date( 'Y-m-d' ) . ' ' .$startTime.'"/>';
+                } else {
+                    $output .= '<input type="hidden" name="pilar_booking_start" value="'.date( 'Y-m-d', strtotime( $_SESSION[ 'dateGet' ] ) ) . ' ' .$startTime.'"/>';
+                }
+            } else {
+                $output .= '<input type="hidden" name="pilar_booking_start" value="'.date( 'Y-m-d' ) . ' ' .$startTime.'"/>';
+            }
+
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+                $today = date( 'l, M j, Y' );
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
+                    $output .= '<input type="hidden" name="pilar_booking_end" value="'.date( 'Y-m-d' ) . ' ' .$endTime.'"/>';
+                } else {
+                    $output .= '<input type="hidden" name="pilar_booking_end" value="'.date( 'Y-m-d', strtotime( $_SESSION[ 'dateGet' ] ) ) . ' ' .$endTime.'"/>';
+                }
+            } else {
+                $output .= '<input type="hidden" name="pilar_booking_end" value="'.date( 'Y-m-d' ) . ' ' .$endTime.'"/>';
+            }
+
+            $output .= '
+                                                          <input type="hidden" name="pilar_service_id" value="'.$service_id.'"/>
+                                                          <input type="hidden" name="pilar_provider_id" value="'.$userId.'"/>
+                                                          <input type="hidden" name="pilar_booking_price" value="'.$service_price.'"/>
+                                                          <input type="hidden" name="pilar_current_user_id" value="'.$results2[ 0 ]->id.'"/>
 
                                                           <div slot="footer" class="dialog-footer payment-dialog-footer">
-                                                              <button type="submit" name="pilar_booking_cart" class="el-button el-button--primary" style=""><span>Confirm</span></button>
+                                                              <button type="submit" name="pilar_booking_cart" class="el-button el-button--primary" style=""><span>'.__("Confirm", "amelia_support_pilar").'</span></button>
                                                           </div>
                                                       
                                                       </form>
@@ -1048,13 +439,13 @@ function employee_show() {
                               </div>
                             ';
 
-                            // Do something with the data from the joined result set
-                            echo "User ID: $userId, Period ID: $period_id, WeekDay ID: $weekDayId, Location ID: $locationId, Start Time: $startTime, End Time: $endTime, Service Name: $service_name <br><br>";
-                          
-                          }
-                        } else {
-                          
-                          $output .= '
+            // Do something with the data from the joined result set
+            // echo "User ID: $userId, Period ID: $period_id, WeekDay ID: $weekDayId, Location ID: $locationId, Start Time: $startTime, End Time: $endTime, Service Name: $service_name <br><br>";
+
+        }
+    } else {
+
+        $output .= '
                           <div class="am-empty-state am-section">
                               <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 240 183" class="svg-search inlined-svg" role="img">
                                   <!-- Generator: Sketch 48.2 (47327) - http://www.bohemiancoding.com/sketch -->
@@ -1131,10 +522,10 @@ function employee_show() {
                               </div>
                           </div>
                           ';
-                          
-                        }
-                        
-                  $output .='
+
+    }
+
+    $output .= '
                       </div>
                   </div>
 
@@ -1173,8 +564,7 @@ function employee_show() {
       </div>
   </div>';
 
-
-  return $output;
+    return $output;
 }
 
 add_shortcode( 'support-employee', 'employee_show' );
