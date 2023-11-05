@@ -20,6 +20,17 @@ function employee_show() {
 
     $output = '';
 
+    $output .= '
+        <style>
+            .amelia-app-booking {
+                display: none !important;
+            }
+            .pilar_booking_list {
+                display: block !important;
+            }
+        </style>
+    ';
+
     // for css and html layout get
     $output .= do_shortcode( '[ameliasearch today=1]' );
 
