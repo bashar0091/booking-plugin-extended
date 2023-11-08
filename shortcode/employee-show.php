@@ -208,9 +208,24 @@ function employee_show() {
             $wc_product_data = json_decode( $row->service_settings );
             $wc_product_id = $wc_product_data->payments->wc->productId;
 
-            if ($formattedStartTime < date('H:i')) {
-                continue;
+            // excerpt the data with time 
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+                $today = date( 'l, M j, Y' );
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
+                    
+                    if ($formattedStartTime < date('H:i')) {
+                        continue;
+                    }
+                    
+                } else {
+                    
+                }
+            } else {
+                if ($formattedStartTime < date('H:i')) {
+                    continue;
+                }
             }
+
             // echo $formattedStartTime .'<br>';
             // echo date('H:i');
 
