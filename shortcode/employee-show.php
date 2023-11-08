@@ -3,8 +3,6 @@
 * Shortcode for employee_show
 */
 
-require_once( 'booking-form.php' );
-
 function employee_show() {
 
     session_start();

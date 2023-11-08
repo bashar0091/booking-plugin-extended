@@ -566,38 +566,39 @@
 				let w = week.days[0].getWeek();
 				let highlight_week = currentYear === week.days[0].getFullYear() && currentWeek === w;
 				let highlightClass = highlight_week ? 'fw-bold text-dark' : '';
-			
+
 				let weekContainer = $('<div>', {
-				  class: 'd-flex flex-nowrap justify-content-between',
+					class: 'd-flex flex-nowrap justify-content-between',
 				}).appendTo(wrap);
-			
+
 				week.days.forEach(day => {
-				  let isToday = today.formatDate(false) === day.formatDate(false);
-				  let inMonth = selectedDate.formatDate(true)[1] === day.formatDate(true)[1];
-				  let cellBackground = isToday ? 'bg-primary text-bg-primary' : (inMonth ? ' bg-white ' : ' bg-white fs-6 fw-small');
-				  let cellTextColor = inMonth ? 'var(--bs-dark)' : '#adadad';
-				  let highlight = !isToday ? '' : ' js-today ';
-				  let cursor = inMonth ? 'pointer' : 'not-allowed'; // Enable/disable pointer events
-				  let colClass = inMonth ? '' : 'disabled_month'; // Add 'disabled_month' class for disabled months
-				  let col = $('<div>', {
-					'data-date': day.formatDate(false),
-					class: 'pilar_date_click position-relative d-flex border border-white rounded-circle justify-content-center align-items-center ' + colClass + highlight + cellBackground + ( day.formatDate(false) == sessionStorage.getItem('date_set_click') ? 'active' : '' ),
-					css: {
-					  color: cellTextColor,
-					  cursor: cursor,
-					  pointerEvents: inMonth ? 'auto' : 'none', // Disable pointer events for previous month dates
-					  width: cellWidthHeight,
-					  height: cellWidthHeight,
-					},
-					html: [
-					  '<div style="font-size:' + fontSize + 'px">' + day.formatDate(true)[2] + '</div>',
-					  [
-						'<small class="js-count-events position-absolute text-center rounded-circle" style="width:4px; height:4px; bottom:4px; left: 50%; margin-left:-2px">',
-						'</small>',
-					  ].join(''),
-					].join(''),
-				  }).appendTo(weekContainer);
-				  col.data('events', []);
+					let isToday = today.formatDate(false) === day.formatDate(false);
+					let inMonth = selectedDate.formatDate(true)[1] === day.formatDate(true)[1];
+					let isPastDate = day < today; // Check if the date is in the past
+					let cellBackground = isToday ? 'bg-primary text-bg-primary' : (inMonth ? ' bg-white ' : ' bg-white fs-6 fw-small');
+					let cellTextColor = inMonth ? 'var(--bs-dark)' : '#adadad';
+					let highlight = !isToday ? '' : ' js-today ';
+					let cursor = inMonth ? 'pointer' : 'not-allowed'; // Enable/disable pointer events
+					let colClass = inMonth ? (isPastDate && !isToday ? 'disabled_month' : '') : 'disabled_month'; // Add 'disabled_month' class for disabled months and past dates
+					let col = $('<div>', {
+						'data-date': day.formatDate(false),
+						class: 'pilar_date_click position-relative d-flex border border-white rounded-circle justify-content-center align-items-center ' + colClass + highlight + cellBackground + (day.formatDate(false) == sessionStorage.getItem('date_set_click') ? 'active' : ''),
+						css: {
+							color: cellTextColor,
+							cursor: cursor,
+							pointerEvents: inMonth ? 'auto' : 'none', // Disable pointer events for previous month dates
+							width: cellWidthHeight,
+							height: cellWidthHeight,
+						},
+						html: [
+							'<div style="font-size:' + fontSize + 'px">' + day.formatDate(true)[2] + '</div>',
+							[
+								'<small class="js-count-events position-absolute text-center rounded-circle" style="width:4px; height:4px; bottom:4px; left: 50%; margin-left:-2px">',
+								'</small>',
+							].join(''),
+						].join(''),
+					}).appendTo(weekContainer);
+					col.data('events', []);
 				});
 			});
 

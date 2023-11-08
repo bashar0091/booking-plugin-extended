@@ -119,6 +119,10 @@ span.pilar_title3 {
     border-radius: 100px;
     border: 1px solid var(--main_color);
 }
+.disabled_month {
+    pointer-events: none !important;
+    cursor: not-allowed !important;
+}
 
 @media (max-width: 1312px) {
     .pilar_sidebar {
