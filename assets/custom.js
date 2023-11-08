@@ -16,4 +16,28 @@ jQuery(document).ready(function($){
         sessionStorage.removeItem('date_set_click');
     });
 
+
+    $("#search-input").on("input", function () {
+        var keyword = $(this).val().toLowerCase();
+
+        $("#service-list .pilar_card_box").each(function () {
+            var card = $(this);
+            var doctorName = card.find("span").text().toLowerCase();
+
+            if (doctorName.includes(keyword)) {
+                card.show();
+            } else {
+                card.hide();
+            }
+        });
+    });
+    
+
+    $('.pilar_humberger').click(function(){
+        $('.pilar_sidebar').addClass('show');
+    });
+    $('.pilar_close_icon').click(function(){
+        $('.pilar_sidebar').removeClass('show');
+    });
+
 });

@@ -437,12 +437,6 @@
             </div>
              <div class="js-weeks"></div>
             <div class="dates"></div>
-            <div class="pt-2 js-collapse" style="display: none">
-                <div class="card mb-0">
-                    <div class="text-center fw-bold py-2 js-day-name card-header"></div>
-                </div>
-                
-            </div>
         `);
 
 		let cellWidthHeight = container.width() / 8; // 7 days + calendar week

@@ -119,3 +119,37 @@ span.pilar_title3 {
     border-radius: 100px;
     border: 1px solid var(--main_color);
 }
+
+@media (max-width: 1312px) {
+    .pilar_sidebar {
+        position: absolute !important;
+        z-index: 99;
+        height: 100%;
+        border-radius: 0 !important;
+        left: -100%;
+        transition: 0.3s ease-in-out;
+    }
+    .pilar_search_bar {
+        margin-left: 48px;
+    }
+    .pilar_humberger {
+        display: inline-block !important;
+    }
+    .pilar_sidebar.show {
+        left: 0;
+    }
+    .pilar_close_icon {
+        display: inline-block !important;
+    }
+}
+@media (max-width: 991px) {
+    .pilar_card_box {
+        grid-template-columns: 1fr 1fr;
+    }
+    .pilar_service_box {
+        order: 4;
+    }
+    .pilar_card_btn {
+        margin-top: 15px;
+    }
+}

@@ -9,6 +9,11 @@ function employee_show() {
 
     session_start();
 
+    $timezone = get_option('timezone_string');
+    date_default_timezone_set($timezone);
+
+    // echo date( 'l, M j, Y, h:i:sa');
+    
     global $wpdb;
 
     // clear session date
@@ -44,6 +49,7 @@ function employee_show() {
 
     $user_first_name = $current_user->first_name;
     $user_last_name = $current_user->last_name;
+    $user_phone_number = get_user_meta($current_user->ID, 'billing_phone', true);
     $user_email = !empty( $current_user->user_email ) ? $current_user->user_email : 'guest@gmail.com';
 
     //  ===  ===  ===
@@ -106,8 +112,8 @@ function employee_show() {
   <div class="pilar_booking_list amelia-search amelia-frontend amelia-app-booking">
       <div id="amelia-booking-wrap" class="am-wrap">
           <div id="am-search-booking">
-              <div class="am-search-filters am-scroll">
-                  <div class="am-close-icon"><i class="el-icon-close"></i></div>
+              <div class="pilar_sidebar am-search-filters am-scroll">
+                  <div class="pilar_close_icon am-close-icon"><i class="el-icon-close"></i></div>
                   <h2>'.__( 'Search Filters', 'my-theme' ).'</h2>
                   <div id="am-search-filters" class="am-search-filter">
                       <button type="button" class="el-button am-search-mobile-button el-button--primary">
@@ -120,7 +126,7 @@ function employee_show() {
               </div>
               <div class="am-search-results">
                   <div class="am-search-input">
-                      <span class="am-filter-icon">
+                      <span class="am-filter-icon pilar_humberger">
                           <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16" class="svg-search inlined-svg" role="img">
                               <!-- Generator: Sketch 47.1 (45422) - http://www.bohemiancoding.com/sketch -->
                               <title>Filter</title>
@@ -138,9 +144,9 @@ function employee_show() {
                               </g>
                           </svg>
                       </span>
-                      <div class="el-input el-input--medium el-input--prefix">
+                      <div class="pilar_search_bar el-input el-input--medium el-input--prefix">
                           <!---->
-                          <input type="text" autocomplete="off" placeholder="Search..." class="el-input__inner" />
+                          <input type="text" id="search-input" placeholder="Search..." class="el-input__inner" />
                           <span class="el-input__prefix">
                               <i class="el-input__icon el-icon-search"></i>
                               <!---->
@@ -204,6 +210,12 @@ function employee_show() {
             $wc_product_data = json_decode( $row->service_settings );
             $wc_product_id = $wc_product_data->payments->wc->productId;
 
+            if ($formattedStartTime < date('H:i')) {
+                continue;
+            }
+            // echo $formattedStartTime .'<br>';
+            // echo date('H:i');
+
             $output .= '
                               <div class="pilar_card_box">
                                 <div class="pilar_card_time">';
@@ -236,7 +248,7 @@ function employee_show() {
                                     </div>
                                 </div>
                             
-                                <div>
+                                <div class="pilar_service_box">
                                     <span>'.$service_name.'</span>
                                 </div>
                             
@@ -348,7 +360,7 @@ function employee_show() {
                                                                                       </div>
                                                                                   </div>
                                                                               </div>
-                                                                              <input type="tel" placeholder="041 2345678" name="tel" class="el-input__inner" required />
+                                                                              <input type="tel" placeholder="041 2345678" name="tel" class="el-input__inner" value="'.$user_phone_number.'" required />
                                                                           </div>
                                                                       </div>
                                                                   </div>
