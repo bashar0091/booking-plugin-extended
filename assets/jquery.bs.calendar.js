@@ -424,7 +424,6 @@
 		let settings = container.data('settings');
 		let today = new Date();
 		container
-			.css({'width': settings.width})
 			.addClass('bg-white')
 			.html(`
             <div class="d-flex flex-nowrap justify-content-between align-items-center my-2">
@@ -582,7 +581,7 @@
 					let colClass = inMonth ? (isPastDate && !isToday ? 'disabled_month' : '') : 'disabled_month'; // Add 'disabled_month' class for disabled months and past dates
 					let col = $('<div>', {
 						'data-date': day.formatDate(false),
-						class: 'pilar_date_click position-relative d-flex border border-white rounded-circle justify-content-center align-items-center ' + colClass + highlight + cellBackground + (day.formatDate(false) == sessionStorage.getItem('date_set_click') ? 'active' : ''),
+						class: 'pilar_date_click position-relative d-flex border border-white rounded-circle justify-content-center align-items-center ' + colClass + highlight + cellBackground + (day.formatDate(false) == sessionStorage.getItem('date_set_click') ? ' active' : ''),
 						css: {
 							color: cellTextColor,
 							cursor: cursor,
@@ -693,6 +692,10 @@
 						.removeClass('border-secondary active')
 						.addClass('border-white')
 					$column.removeClass('border-white').addClass('border-secondary active')
+
+					container.find('.js-today').removeClass('js-today');
+					sessionStorage.setItem('clickedDate', 'removeJsToday');
+
 					let date = new Date($column.data('date'));
 					let events = $column.data('events');
 					container.find('.js-day-name').html(date.showDateFormatted());
@@ -716,8 +719,10 @@
 							$('.am-spinner').show();
 						},
 						success: function(response) {
-						console.log(response);
-						location.reload();
+						
+						var data = JSON.parse(response);
+
+						window.location.href = data.get_url;
 						},
 						error: function(xhr, status, error) {
 							console.error('AJAX request failed:', status, error);

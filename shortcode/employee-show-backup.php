@@ -53,32 +53,12 @@ function employee_show() {
     $table_name_providers_to_periods = $prefix . 'amelia_providers_to_periods';
     $table_name_providers_to_periods_services = $prefix . 'amelia_providers_to_periods_services';
     $table_name_services = $prefix . 'amelia_services';
-   
-    if ( isset( $_GET[ 'päivä' ] ) && !empty( $_GET[ 'päivä' ] ) ) {
 
-        $get_day = $_GET[ 'päivä' ];
+    if ( isset( $_SESSION[ 'day_index' ] ) && !empty( $_SESSION[ 'day_index' ] ) ) {
 
-        if ( $get_day == 'Monday' ) {
-            $day_index = 1;
-        } elseif ( $get_day == 'Tuesday' ) {
-            $day_index = 2;
-        } elseif ( $get_day == 'Wednesday' ) {
-            $day_index = 3;
-        } elseif ( $get_day == 'Thursday' ) {
-            $day_index = 4;
-        } elseif ( $get_day == 'Friday' ) {
-            $day_index = 5;
-        } elseif ( $get_day == 'Saturday' ) {
-            $day_index = 6;
-        } elseif ( $get_day == 'Sunday' ) {
-            $day_index = 7;
-        } else {
-            $day_index = 0;
-        }
+        $day_index = $_SESSION[ 'day_index' ];
 
     } else {
-
-        $output .= '<script>sessionStorage.removeItem("date_set_click");sessionStorage.removeItem("clickedDate");</script>';
 
         $currentDate = date( 'l' );
 
@@ -101,7 +81,7 @@ function employee_show() {
         }
 
     }
-    
+
     $query = $wpdb->prepare(
         "SELECT papp.id AS period_id, pwpd.userId, u.id AS user_id, papp.weekDayId, papp.locationId, papp.startTime, papp.endTime, u.status, u.type, u.firstName, u.lastName, u.zoomUserId, u.pictureFullPath, app_service.serviceId,
     s.id AS service_id, s.name AS service_name, s.price AS service_price, s.settings As service_settings, s.duration As service_duration
@@ -168,8 +148,28 @@ function employee_show() {
                       </div>
                   </div>
                   
-                  <div class="am-service-list">
-                    <div id="service-list" class="am-service-list-container">';
+                  <div class="am-service-list">';
+
+    if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
+        $today = date( 'l, M j, Y' );
+        if ( $today == $_SESSION[ 'dateGet' ] ) {
+
+        } else {
+            $output .= '
+                            <div class="d-flex align-items-center">
+                                <span>'.__("Näytetään tulokset", "amelia_support_pilar").' <u>'.$_SESSION[ 'dateGet' ].'</u></span>
+                                <span>
+                                    <form action="" method="post" style="margin-bottom: 0">
+                                        <button name="date_clear" class="date_remove_pilar el-button el-button--danger">'.__("Tyhjennä", "amelia_support_pilar").'</button>
+                                    </form>
+                                </span>
+                            </div>
+                            ';
+        }
+    }
+
+    $output .= '
+                      <div id="service-list" class="am-service-list-container">';
 
 
     if ( $results ) {
@@ -211,9 +211,9 @@ function employee_show() {
             $wc_product_id = $wc_product_data->payments->wc->productId;
 
             // excerpt the data with time 
-            if ( isset( $_GET[ 'päivämäärä' ] ) && !empty( $_GET[ 'päivämäärä' ] ) ) {
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
                 $today = date( 'l, M j, Y' );
-                if ( $today == $_GET[ 'päivämäärä' ] ) {
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
                     
                     if ($formattedStartTime < date('H:i')) {
                         continue;
@@ -230,11 +230,11 @@ function employee_show() {
 
 
 // look break according to appointment 
-            if ( isset( $_GET[ 'päivämäärä' ] ) && !empty( $_GET[ 'päivämäärä' ] ) ) {
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
                 
                 $break_loop = false; 
                 $amelia_appointments_table_name = $wpdb->prefix . 'amelia_appointments';
-                $current_date = date('Y-m-d', strtotime($_GET[ 'päivämäärä' ]));
+                $current_date = date('Y-m-d', strtotime($_SESSION[ 'dateGet' ]));
                 $appointment_query = $wpdb->prepare(
                     "SELECT bookingStart
                     FROM $amelia_appointments_table_name 
@@ -245,7 +245,7 @@ function employee_show() {
                 $appointment_data = $wpdb->get_results($appointment_query);
                 if ($appointment_data) {
                     foreach ($appointment_data as $appointment) {
-                        if ( date('Y-m-d '.$startTime, strtotime($_GET[ 'päivämäärä' ])) == date('Y-m-d H:i:s', strtotime($appointment->bookingStart) + 2 * 60 * 60) ) {
+                        if ( date('Y-m-d '.$startTime, strtotime($_SESSION[ 'dateGet' ])) == date('Y-m-d H:i:s', strtotime($appointment->bookingStart) + 2 * 60 * 60) ) {
                             $break_loop = true;
                         }
                     }
@@ -286,12 +286,12 @@ function employee_show() {
                               <div class="pilar_card_box">
                                 <div class="pilar_card_time">';
 
-            if ( isset( $_GET[ 'päivämäärä' ] ) && !empty( $_GET[ 'päivämäärä' ] ) ) {
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
                 $today = date( 'l, M j, Y' );
-                if ( $today == $_GET[ 'päivämäärä' ] ) {
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
                     $output .= '<span class="pilar_title1">'.__( 'Tänään', 'amelia_support_pilar' ).'</span>';
                 } else {
-                    $output .= '<span class="pilar_title1">' . $_GET[ 'päivämäärä' ].'</span>';
+                    $output .= '<span class="pilar_title1">' . $_SESSION[ 'dateGet' ].'</span>';
                 }
             } else {
                 $output .= '<span class="pilar_title1">'.__( 'Tänään', 'amelia_support_pilar' ).'</span>';
@@ -352,12 +352,12 @@ function employee_show() {
                                                                       <div>
                                                                           <p>'.__("Päivämäärä", "amelia_support_pilar").':</p>
                                                                           <p class="am-semi-strong">';
-            if ( isset( $_GET[ 'päivämäärä' ] ) && !empty( $_GET[ 'päivämäärä' ] ) ) {
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
                 $today = date( 'l, M j, Y' );
-                if ( $today == $_GET[ 'päivämäärä' ] ) {
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
                     $output .= date( 'd.m.Y' );
                 } else {
-                    $output .= date( 'd.m.Y', strtotime( $_GET[ 'päivämäärä' ] ) );
+                    $output .= date( 'd.m.Y', strtotime( $_SESSION[ 'dateGet' ] ) );
                 }
             } else {
                 $output .= date( 'd.m.Y' );
@@ -467,12 +467,12 @@ function employee_show() {
                                                           </div>
                                                           ';
 
-            if ( isset( $_GET[ 'päivämäärä' ] ) && !empty( $_GET[ 'päivämäärä' ] ) ) {
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
                 $today = date( 'l, M j, Y' );
-                if ( $today == $_GET[ 'päivämäärä' ] ) {
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
                     $output .= '<input type="hidden" name="time_date" value="'.date( 'd.m.Y' ) .' '. $formattedStartTime.'"/>';
                 } else {
-                    $output .= '<input type="hidden" name="time_date" value="'.date( 'd.m.Y', strtotime( $_GET[ 'päivämäärä' ] ) ) .' '. $formattedStartTime.'"/>';
+                    $output .= '<input type="hidden" name="time_date" value="'.date( 'd.m.Y', strtotime( $_SESSION[ 'dateGet' ] ) ) .' '. $formattedStartTime.'"/>';
                 }
             } else {
                 $output .= '<input type="hidden" name="time_date" value="'.date( 'd.m.Y' ) .' '. $formattedStartTime.'"/>';
@@ -484,23 +484,23 @@ function employee_show() {
                                                           <input type="hidden" name="doctor_name" value="'.$user_firstName.' '.$user_lastName.'"/>
                                                           <input type="hidden" name="wc_product_id" value="'.$wc_product_id.'"/>';
 
-            if ( isset( $_GET[ 'päivämäärä' ] ) && !empty( $_GET[ 'päivämäärä' ] ) ) {
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
                 $today = date( 'l, M j, Y' );
-                if ( $today == $_GET[ 'päivämäärä' ] ) {
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
                     $output .= '<input type="hidden" name="pilar_booking_start" value="'.date( 'Y-m-d' ) . ' ' .date('H:i:s', strtotime($startTime) - 2 * 60 * 60).'"/>';
                 } else {
-                    $output .= '<input type="hidden" name="pilar_booking_start" value="'.date( 'Y-m-d', strtotime( $_GET[ 'päivämäärä' ] ) ) . ' ' .date('H:i:s', strtotime($startTime) - 2 * 60 * 60).'"/>';
+                    $output .= '<input type="hidden" name="pilar_booking_start" value="'.date( 'Y-m-d', strtotime( $_SESSION[ 'dateGet' ] ) ) . ' ' .date('H:i:s', strtotime($startTime) - 2 * 60 * 60).'"/>';
                 }
             } else {
                 $output .= '<input type="hidden" name="pilar_booking_start" value="'.date( 'Y-m-d' ) . ' ' .date('H:i:s', strtotime($startTime) - 2 * 60 * 60).'"/>';
             }
 
-            if ( isset( $_GET[ 'päivämäärä' ] ) && !empty( $_GET[ 'päivämäärä' ] ) ) {
+            if ( isset( $_SESSION[ 'dateGet' ] ) && !empty( $_SESSION[ 'dateGet' ] ) ) {
                 $today = date( 'l, M j, Y' );
-                if ( $today == $_GET[ 'päivämäärä' ] ) {
+                if ( $today == $_SESSION[ 'dateGet' ] ) {
                     $output .= '<input type="hidden" name="pilar_booking_end" value="'.date( 'Y-m-d' ) . ' ' .date('H:i:s', strtotime($endTime) - 2 * 60 * 60).'"/>';
                 } else {
-                    $output .= '<input type="hidden" name="pilar_booking_end" value="'.date( 'Y-m-d', strtotime( $_GET[ 'päivämäärä' ] ) ) . ' ' .date('H:i:s', strtotime($endTime) - 2 * 60 * 60).'"/>';
+                    $output .= '<input type="hidden" name="pilar_booking_end" value="'.date( 'Y-m-d', strtotime( $_SESSION[ 'dateGet' ] ) ) . ' ' .date('H:i:s', strtotime($endTime) - 2 * 60 * 60).'"/>';
                 }
             } else {
                 $output .= '<input type="hidden" name="pilar_booking_end" value="'.date( 'Y-m-d' ) . ' ' .date('H:i:s', strtotime($endTime) - 2 * 60 * 60).'"/>';

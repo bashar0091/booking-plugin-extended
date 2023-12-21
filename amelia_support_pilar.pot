@@ -1,0 +1,85 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: Amelia Support plugin by Pilar\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2023-11-10 03:19+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: \n"
+"Language: \n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"X-Generator: Loco https://localise.biz/\n"
+"X-Loco-Version: 2.6.6; wp-6.4.1\n"
+"X-Domain: amelia_support_pilar"
+
+#. Name of the plugin
+msgid "Amelia Support plugin by Pilar"
+msgstr ""
+
+#: shortcode/employee-show.php:389
+msgid "Base Price"
+msgstr ""
+
+#: shortcode/employee-show.php:269
+msgid "Book"
+msgstr ""
+
+#: shortcode/employee-show.php:168
+msgid "Clear"
+msgstr ""
+
+#: shortcode/employee-show.php:276
+msgid "Close"
+msgstr ""
+
+#: shortcode/employee-show.php:463
+msgid "Confirm"
+msgstr ""
+
+#: shortcode/employee-show.php:300
+msgid "Date"
+msgstr ""
+
+#: shortcode/employee-show.php:353
+msgid "Email"
+msgstr ""
+
+#: shortcode/employee-show.php:327
+msgid "First Name"
+msgstr ""
+
+#: shortcode/employee-show.php:340
+msgid "Last Name"
+msgstr ""
+
+#: shortcode/employee-show.php:316
+msgid "Local Time"
+msgstr ""
+
+#: shortcode/employee-show.php:293
+msgid "PALVELU"
+msgstr ""
+
+#: shortcode/employee-show.php:366
+msgid "Phone"
+msgstr ""
+
+#. Author of the plugin
+msgid "Pilar Dev"
+msgstr ""
+
+#: shortcode/employee-show.php:165
+msgid "Showing Result of"
+msgstr ""
+
+#: shortcode/employee-show.php:239 shortcode/employee-show.php:244
+msgid "Today"
+msgstr ""
+
+#: shortcode/employee-show.php:402
+msgid "Total Cost"
+msgstr ""
