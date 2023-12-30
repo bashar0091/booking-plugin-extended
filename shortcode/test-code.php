@@ -49,31 +49,73 @@ function employee_show() {
 
     $prefix = $wpdb->prefix;
 
-    $table_name_specialdays = $prefix . 'amelia_providers_to_specialdays';
-    $table_name_periods = $prefix . 'amelia_providers_to_specialdays_periods';
-    $table_name_users = $prefix . 'amelia_users';
-    $table_name_periods_services = $prefix . 'amelia_providers_to_specialdays_periods_services';
+    $table_name_providers_to_weekdays = $prefix . 'amelia_providers_to_weekdays';
+    $table_name_providers_to_periods = $prefix . 'amelia_providers_to_periods';
+    $table_name_providers_to_periods_services = $prefix . 'amelia_providers_to_periods_services';
     $table_name_services = $prefix . 'amelia_services';
    
-    if( $_GET['päivämäärä'] ) {
-        $day_index = date('Y-m-d', strtotime($_GET[ 'päivämäärä' ]));
-    } else {
-        $day_index = date('Y-m-d');
-    }
+    if ( isset( $_GET[ 'päivä' ] ) && !empty( $_GET[ 'päivä' ] ) ) {
 
+        $get_day = $_GET[ 'päivä' ];
+
+        if ( $get_day == 'Monday' ) {
+            $day_index = 1;
+        } elseif ( $get_day == 'Tuesday' ) {
+            $day_index = 2;
+        } elseif ( $get_day == 'Wednesday' ) {
+            $day_index = 3;
+        } elseif ( $get_day == 'Thursday' ) {
+            $day_index = 4;
+        } elseif ( $get_day == 'Friday' ) {
+            $day_index = 5;
+        } elseif ( $get_day == 'Saturday' ) {
+            $day_index = 6;
+        } elseif ( $get_day == 'Sunday' ) {
+            $day_index = 7;
+        } else {
+            $day_index = 0;
+        }
+
+    } else {
+
+        $output .= '<script>sessionStorage.removeItem("date_set_click");sessionStorage.removeItem("clickedDate");</script>';
+
+        $currentDate = date( 'l' );
+
+        if ( $currentDate == 'Monday' ) {
+            $day_index = 1;
+        } elseif ( $currentDate == 'Tuesday' ) {
+            $day_index = 2;
+        } elseif ( $currentDate == 'Wednesday' ) {
+            $day_index = 3;
+        } elseif ( $currentDate == 'Thursday' ) {
+            $day_index = 4;
+        } elseif ( $currentDate == 'Friday' ) {
+            $day_index = 5;
+        } elseif ( $currentDate == 'Saturday' ) {
+            $day_index = 6;
+        } elseif ( $currentDate == 'Sunday' ) {
+            $day_index = 7;
+        } else {
+            $day_index = 0;
+        }
+
+    }
+    
     $query = $wpdb->prepare(
-        "SELECT sd.id AS special_day_id, sd.startDate AS start_date, sd.endDate AS end_date, 
-        p.id AS period_id, p.locationId AS location_id, p.startTime AS startTime, p.endTime AS endTime, 
-        ps.serviceId AS service_id,
-        s.id AS service_id, s.name AS service_name, s.price AS service_price, s.settings AS service_settings, s.duration AS service_duration,
-        u.*
-        FROM $table_name_specialdays AS sd
-        LEFT JOIN $table_name_periods AS p ON sd.id = p.specialDayId 
-        LEFT JOIN $table_name_periods_services AS ps ON p.id = ps.periodId
-        LEFT JOIN $table_name_services AS s ON ps.serviceId = s.id
-        LEFT JOIN $table_name_users AS u ON sd.userId = u.id
-        WHERE sd.startDate = %s
-        ORDER BY p.startTime ASC",
+        "SELECT papp.id AS period_id, pwpd.userId, u.id AS user_id, papp.weekDayId, papp.locationId, papp.startTime, papp.endTime, u.status, u.type, u.firstName, u.lastName, u.zoomUserId, u.pictureFullPath, app_service.serviceId,
+    s.id AS service_id, s.name AS service_name, s.price AS service_price, s.settings As service_settings, s.duration As service_duration
+    FROM $table_name_providers_to_periods AS papp
+    INNER JOIN $table_name_providers_to_weekdays AS pwpd
+    ON papp.weekDayId = pwpd.id
+    LEFT JOIN {$prefix}amelia_users AS u
+    ON pwpd.userId = u.id
+    LEFT JOIN $table_name_providers_to_periods_services AS app_service
+    ON papp.id = app_service.periodId
+    LEFT JOIN $table_name_services AS s
+    ON app_service.serviceId = s.id
+    WHERE pwpd.dayIndex = %d
+    ORDER BY papp.startTime ASC", // Order by start time in ascending order
         $day_index
     );
 
@@ -133,14 +175,14 @@ function employee_show() {
     if ( $results ) {
         foreach ( $results as $row ) {
             // Access data for each row in the joined result set
-            $userId = $row->id;
+            $userId = $row->userId;
 
             $period_id = $row->period_id;
             $weekDayId = $row->weekDayId;
             $locationId = $row->locationId;
 
             $startTime = $row->startTime;
-            
+
             $formattedStartTime = date( 'H:i', strtotime( $startTime ) );
 
             $endTime = $row->endTime;
@@ -618,3 +660,71 @@ function employee_show() {
 }
 
 add_shortcode( 'support-employee', 'employee_show' );
+
+
+// global $wpdb;
+
+// $table_name_specialdays = $wpdb->prefix . 'amelia_providers_to_specialdays';
+// $table_name_periods = $wpdb->prefix . 'amelia_providers_to_specialdays_periods';
+// $start_date = '2023-12-30';
+
+// $query = $wpdb->prepare(
+//     "SELECT * FROM $table_name_specialdays 
+//     LEFT JOIN $table_name_periods ON $table_name_specialdays.id = $table_name_periods.specialDayId 
+//     WHERE $table_name_specialdays.startDate = %s",
+//     $start_date
+// );
+
+// $results = $wpdb->get_results($query);
+
+// if ($results) {
+//     foreach ($results as $result) {
+//         // Access data from the JOINED tables here using $result->columnName
+//         echo "Special Day ID: {$result->id}, User ID: {$result->userId}, Start Date: {$result->startDate}, End Date: {$result->endDate}, 
+//         Special Day Period ID: {$result->id}, Location ID: {$result->locationId}, Start Time: {$result->startTime}, End Time: {$result->endTime}<br>";
+//     }
+// } else {
+//     echo 'No data found.';
+// }
+
+
+
+global $wpdb;
+$prefix = $wpdb->prefix;
+$table_name_specialdays = $prefix . 'amelia_providers_to_specialdays';
+$table_name_periods = $prefix . 'amelia_providers_to_specialdays_periods';
+$table_name_users = $prefix . 'amelia_users';
+$table_name_periods_services = $prefix . 'amelia_providers_to_specialdays_periods_services';
+$table_name_services = $prefix . 'amelia_services';
+
+$day_index = '2023-12-31';
+$query = $wpdb->prepare(
+    "SELECT sd.id AS special_day_id, sd.startDate AS start_date, sd.endDate AS end_date, 
+    p.id AS period_id, p.locationId AS location_id, p.startTime AS start_time, p.endTime AS end_time, 
+    ps.serviceId AS service_id,
+    s.id AS service_id, s.name AS service_name, s.price AS service_price, s.settings AS service_settings, s.duration AS service_duration,
+    u.* /* All columns from users table */
+    FROM $table_name_specialdays AS sd
+    LEFT JOIN $table_name_periods AS p ON sd.id = p.specialDayId 
+    LEFT JOIN $table_name_periods_services AS ps ON p.id = ps.periodId
+    LEFT JOIN $table_name_services AS s ON ps.serviceId = s.id
+    LEFT JOIN $table_name_users AS u ON sd.userId = u.id
+    WHERE sd.startDate = %s",
+    $day_index
+);
+
+$results = $wpdb->get_results($query);
+
+if ($results) {
+    foreach ($results as $result) {
+        echo "Special Day ID: {$result->special_day_id}, Start Date: {$result->start_date}, End Date: {$result->end_date}, 
+        Period ID: {$result->period_id}, Location ID: {$result->location_id}, Start Time: {$result->start_time}, End Time: {$result->end_time}, 
+        Service ID: {$result->service_id}, Service Name: {$result->service_name}, Service Price: {$result->service_price}, 
+        Service Settings: {$result->service_settings}, Service Duration: {$result->service_duration}, ";
+        
+        // Output user data - adjust the column names accordingly
+        echo "User ID: {$result->id}, Username: {$result->user_login}, Email: {$result->user_email}, ..."; // Add other user columns as needed
+    }
+} else {
+    echo 'No data found.';
+}
