@@ -55,6 +55,7 @@ require_once plugin_dir_path(__FILE__) . 'shortcode/employee-show-calendar-ajax.
 require_once plugin_dir_path(__FILE__) . 'shortcode/additional_information_value.php';
 require_once plugin_dir_path(__FILE__) . 'controller/additional-note-added-query.php';
 require_once plugin_dir_path(__FILE__) . 'controller/make-table-column.php';
+require_once plugin_dir_path(__FILE__) . 'controller/filer_uploader_ajax.php';
 
 /**
  * WooCommerce booking product add to cart with additional data

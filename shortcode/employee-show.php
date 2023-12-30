@@ -49,73 +49,20 @@ function employee_show() {
 
     $prefix = $wpdb->prefix;
 
-    $table_name_providers_to_weekdays = $prefix . 'amelia_providers_to_weekdays';
-    $table_name_providers_to_periods = $prefix . 'amelia_providers_to_periods';
+    $table_name_specialdays = $prefix . 'amelia_providers_to_specialdays';
+    $table_name_periods = $prefix . 'amelia_providers_to_specialdays_periods';
+    $table_name_users = $prefix . 'amelia_users';
+    
     $table_name_providers_to_periods_services = $prefix . 'amelia_providers_to_periods_services';
     $table_name_services = $prefix . 'amelia_services';
    
-    if ( isset( $_GET[ 'päivä' ] ) && !empty( $_GET[ 'päivä' ] ) ) {
-
-        $get_day = $_GET[ 'päivä' ];
-
-        if ( $get_day == 'Monday' ) {
-            $day_index = 1;
-        } elseif ( $get_day == 'Tuesday' ) {
-            $day_index = 2;
-        } elseif ( $get_day == 'Wednesday' ) {
-            $day_index = 3;
-        } elseif ( $get_day == 'Thursday' ) {
-            $day_index = 4;
-        } elseif ( $get_day == 'Friday' ) {
-            $day_index = 5;
-        } elseif ( $get_day == 'Saturday' ) {
-            $day_index = 6;
-        } elseif ( $get_day == 'Sunday' ) {
-            $day_index = 7;
-        } else {
-            $day_index = 0;
-        }
-
-    } else {
-
-        $output .= '<script>sessionStorage.removeItem("date_set_click");sessionStorage.removeItem("clickedDate");</script>';
-
-        $currentDate = date( 'l' );
-
-        if ( $currentDate == 'Monday' ) {
-            $day_index = 1;
-        } elseif ( $currentDate == 'Tuesday' ) {
-            $day_index = 2;
-        } elseif ( $currentDate == 'Wednesday' ) {
-            $day_index = 3;
-        } elseif ( $currentDate == 'Thursday' ) {
-            $day_index = 4;
-        } elseif ( $currentDate == 'Friday' ) {
-            $day_index = 5;
-        } elseif ( $currentDate == 'Saturday' ) {
-            $day_index = 6;
-        } elseif ( $currentDate == 'Sunday' ) {
-            $day_index = 7;
-        } else {
-            $day_index = 0;
-        }
-
-    }
+    $day_index = date('y-m-d');
     
     $query = $wpdb->prepare(
-        "SELECT papp.id AS period_id, pwpd.userId, u.id AS user_id, papp.weekDayId, papp.locationId, papp.startTime, papp.endTime, u.status, u.type, u.firstName, u.lastName, u.zoomUserId, u.pictureFullPath, app_service.serviceId,
-    s.id AS service_id, s.name AS service_name, s.price AS service_price, s.settings As service_settings, s.duration As service_duration
-    FROM $table_name_providers_to_periods AS papp
-    INNER JOIN $table_name_providers_to_weekdays AS pwpd
-    ON papp.weekDayId = pwpd.id
-    LEFT JOIN {$prefix}amelia_users AS u
-    ON pwpd.userId = u.id
-    LEFT JOIN $table_name_providers_to_periods_services AS app_service
-    ON papp.id = app_service.periodId
-    LEFT JOIN $table_name_services AS s
-    ON app_service.serviceId = s.id
-    WHERE pwpd.dayIndex = %d
-    ORDER BY papp.startTime ASC", // Order by start time in ascending order
+        "SELECT * FROM $table_name_specialdays 
+        LEFT JOIN $table_name_periods ON $table_name_specialdays.id = $table_name_periods.specialDayId 
+        LEFT JOIN $table_name_users ON $table_name_specialdays.userId = $table_name_users.id
+        WHERE $table_name_specialdays.startDate = %s",
         $day_index
     );
 

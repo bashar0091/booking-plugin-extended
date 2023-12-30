@@ -1,24 +1,34 @@
 <?php
 
 // Define a function to add the column
-function add_custom_column_on_activation() {
+function add_custom_columns_on_activation() {
     global $wpdb;
 
-    // Define the table name and new column name
+    // Define the table name and new column names
     $table_name = $wpdb->prefix . 'amelia_customer_bookings'; // Replace 'wp_' with your WordPress table prefix if different
-    $new_column_name = 'booking_additional_text'; // Replace with your desired column name
+    $new_column_name_1 = 'booking_additional_text'; // Replace with your desired column name
+    $new_column_name_2 = 'booking_additional_uploaded_image'; // New column for JSON encoded data
 
-    // Check if the column exists in the table
-    $column_exists = $wpdb->get_var("SHOW COLUMNS FROM $table_name LIKE '$new_column_name'");
+    // Check if the columns exist in the table
+    $column_exists_1 = $wpdb->get_var("SHOW COLUMNS FROM $table_name LIKE '$new_column_name_1'");
+    $column_exists_2 = $wpdb->get_var("SHOW COLUMNS FROM $table_name LIKE '$new_column_name_2'");
 
-    if (!$column_exists) {
-        // Column doesn't exist, so add it as a LONGTEXT
-        $wpdb->query("ALTER TABLE $table_name ADD COLUMN $new_column_name LONGTEXT AFTER actionsCompleted");
+    if (!$column_exists_1) {
+        // Column 1 doesn't exist, so add it as a LONGTEXT
+        $wpdb->query("ALTER TABLE $table_name ADD COLUMN $new_column_name_1 LONGTEXT AFTER actionsCompleted");
     } else {
-        // Column already exists, perform any alternative actions or skip
-        echo "Column '$new_column_name' already exists in the table.";
+        // Column 1 already exists
+        echo "Column '$new_column_name_1' already exists in the table.";
+    }
+
+    if (!$column_exists_2) {
+        // Column 2 doesn't exist, so add it as a LONGTEXT for JSON encoded data
+        $wpdb->query("ALTER TABLE $table_name ADD COLUMN $new_column_name_2 LONGTEXT AFTER $new_column_name_1");
+    } else {
+        // Column 2 already exists
+        echo "Column '$new_column_name_2' already exists in the table.";
     }
 }
 
 // Hook the function to plugin activation
-register_activation_hook(__FILE__, 'add_custom_column_on_activation');
+register_activation_hook(__FILE__, 'add_custom_columns_on_activation');

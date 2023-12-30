@@ -33,6 +33,22 @@ if( isset($_POST['add_info']) ){
                     array('booking_additional_text' => $_POST['additiona_info_text']),
                     array('appointmentId' => $appointment_id)
                 );
+
+                if(isset($_POST['uploaded_image'])) {
+                    $combined_images = array_combine($_POST['uploaded_image_id'], $_POST['uploaded_image']);
+                    $wpdb->update(
+                        $bookings_table,
+                        array('booking_additional_uploaded_image' => json_encode($combined_images)),
+                        array('appointmentId' => $appointment_id)
+                    );
+                } else {
+                    $wpdb->update(
+                        $bookings_table,
+                        array('booking_additional_uploaded_image' => null),
+                        array('appointmentId' => $appointment_id)
+                    );
+                }
+                
             }
         }
     }

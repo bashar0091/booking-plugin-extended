@@ -1,12 +1,17 @@
-.add_info,
-.pilar_add_note_btn {
-    color: #009e82;
-    font-weight: 400;
-    border: 2px solid #009e82;
-    border-radius: 5px;
-    z-index: 99999999;
-    font-size: 13px;
-    margin: 20px 0;
+.additiona_infor {
+    float: left;
+    overflow: hidden;
+    margin-right: 10px;
+}
+.add_info, .pilar_add_note_btn {
+	color: #009e82;
+	font-weight: 400;
+	border: 1px solid #009e82;
+	border-radius: 3px;
+	z-index: 99999999;
+	font-size: 13px;
+	background: transparent;
+    cursor: pointer;
 }
 .add_info{
     min-width: auto;
@@ -50,8 +55,40 @@
 	line-height: 10px !important;
 	font-size: 16px;
 	border: none;
+    cursor: pointer;
 }
 .info_linking_table,
 .pilar_zoom_link {
     display: none;
+}
+.additiona_info_text {
+	min-height: 300px !important;
+	background: transparent !important;
+	border: 1px solid #ddd !important;
+    margin: 10px 0;
+    padding: 10px;
+}
+.image_previewer img {
+    width: 100% !important;
+    height: 120px !important;
+    max-width: 150px !important;
+    border-radius: 0 !important;
+    object-fit: cover;
+    object-position: top;
+}
+.image_previewer button {
+    display: none;
+}
+
+#submission_info {
+    width: 70% !important;
+}
+
+@media (max-width: 991px) {
+    #submission_info {
+        width: 100% !important;
+    }
+    #submission_info .close {
+        top: 77px !important;
+    }
 }
