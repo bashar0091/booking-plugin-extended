@@ -39,7 +39,12 @@ add_action('wp_enqueue_scripts', 'wc_ws_bf_enqueue_scripts');
  */
 function wc_ws_bf_enqueue_scripts_admin() {
     wp_enqueue_style('customized-admin-style', plugin_dir_url(__FILE__) . 'assets/custom-admin.css', false, time(), 'all');
+
+    wp_enqueue_script('html2pdf-admin-script', plugin_dir_url(__FILE__) . 'assets/html2pdf.bundle.min.js', array('jquery'), time(), true);
     wp_enqueue_script('customed-admin-script', plugin_dir_url(__FILE__) . 'assets/custom-admin.js', array('jquery'), time(), true);
+
+    // Ajax Request URL
+    wp_localize_script('customed-admin-script', 'adminAjax', array('ajaxurl' => admin_url('admin-ajax.php')));
 
     wp_localize_script('customed-admin-script', 'shortcodeData', array(
         'additionalInfo' => do_shortcode('[additional_info]'),
@@ -56,6 +61,7 @@ require_once plugin_dir_path(__FILE__) . 'shortcode/additional_information_value
 require_once plugin_dir_path(__FILE__) . 'controller/additional-note-added-query.php';
 require_once plugin_dir_path(__FILE__) . 'controller/make-table-column.php';
 require_once plugin_dir_path(__FILE__) . 'controller/filer_uploader_ajax.php';
+require_once plugin_dir_path(__FILE__) . 'controller/get_hourly_rate_ajax.php';
 
 /**
  * WooCommerce booking product add to cart with additional data
@@ -189,6 +195,27 @@ function wc_after_order_action($order_id) {
 
     if ( $order && $order->is_paid() ) {
         global $wpdb;
+
+        // make new user , if user is not logged in 
+        $table_name_amelia_users = $wpdb->prefix . 'amelia_users';
+        $current_user = wp_get_current_user();
+        $current_user_id = $current_user->id;
+        $first_name = sanitize_text_field($_SESSION['user_first_name']);
+        $last_name = sanitize_text_field($_SESSION['user_last_name']);
+        $email = sanitize_email($_SESSION['user_email_add']);
+        $phone = sanitize_text_field($_SESSION['user_telephone']);
+
+        $wpdb->insert($table_name_amelia_users, array(
+            'status' => 'visible',
+            'type' => 'customer',
+            'externalId' => $current_user_id, // Removed extra space after 'externalId'
+            'firstName' => $first_name,
+            'lastName' => $last_name,
+            'email' => $email,
+            'phone' => $phone,
+        ), array(
+            '%s', '%s', '%d', '%s', '%s', '%s', '%s' // Adjust other '%s' for other columns
+        ));  
 
         // Insert data into the 'amelia_appointments' table
         $table_name_appointments = $wpdb->prefix . 'amelia_appointments';

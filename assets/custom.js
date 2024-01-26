@@ -199,5 +199,17 @@ jQuery(document).ready(function($){
     });
     
 
+    //set other page not date 
+    if (window.location.pathname !== '/varaa-etavastaanotto/') {
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+    
+        const formattedDate = `${year}-${month}-${day}`;
+        console.log(formattedDate);
+    
+        sessionStorage.setItem("date_set_click", formattedDate);
+    }    
 
 });

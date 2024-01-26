@@ -28,7 +28,20 @@ function add_custom_columns_on_activation() {
         // Column 2 already exists
         echo "Column '$new_column_name_2' already exists in the table.";
     }
-}
 
+
+    // wp_amelia_users new column added name will be hourly_rate
+    $table_name_amelia_users = $wpdb->prefix . 'amelia_users';
+    $new_column_name_3 = 'hourly_rate';
+    $column_exists_3 = $wpdb->get_var("SHOW COLUMNS FROM $table_name_amelia_users LIKE '$new_column_name_3'");
+    if (!$column_exists_3) {
+        // Column 1 doesn't exist, so add it as a LONGTEXT
+        $wpdb->query("ALTER TABLE $table_name_amelia_users ADD COLUMN $new_column_name_3 int AFTER badgeId	");
+    }
+
+}
 // Hook the function to plugin activation
 register_activation_hook(__FILE__, 'add_custom_columns_on_activation');
+
+
+
